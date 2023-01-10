@@ -1,14 +1,20 @@
 mod actor;
+mod debug_ui;
 mod player;
+mod player_ui;
 
 use bevy::prelude::*;
 
+use crate::debug_ui::DebugUI;
 use crate::player::*;
+use crate::player_ui::PlayerUi;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(PlayerPlugin)
+        .add_plugin(DebugUI)
+        .add_plugin(PlayerUi)
         .add_startup_system(setup_scene)
         .run();
 }
