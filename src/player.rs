@@ -37,6 +37,12 @@ pub fn move_player(
     if input.pressed(KeyCode::D) {
         direction.z += 1.0;
     }
+    if input.pressed(KeyCode::Space) {
+        direction.y += 1.0;
+    }
+    if input.pressed(KeyCode::LControl) {
+        direction.y -= 1.0;
+    }
 
     if direction.length() > 0.001 {
         direction = direction.normalize();
@@ -51,7 +57,7 @@ pub fn spawn_player(
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let tex_handle = asset_server.load("PNG/Red/texture_01.png");
+    let tex_handle = asset_server.load("PNG/Green/texture_04.png");
     let material_handle = materials.add(StandardMaterial {
         base_color_texture: Some(tex_handle.clone()),
         alpha_mode: AlphaMode::Blend,
@@ -65,20 +71,26 @@ pub fn spawn_player(
         transform: Transform::from_xyz(0.0, 1.0, 0.0),
         ..default()
     };
-    // camera
-    let camera = commands
-        .spawn(Camera3dBundle {
-            transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-            ..default()
-        })
-        .id();
+    let player_bundle = PlayerBundle {
+        actor: Actor { pbr, ..default() },
+        ..default()
+    };
 
-    commands
-        .spawn(PlayerBundle {
-            actor: Actor { pbr, ..default() },
-            ..default()
-        })
-        .add_child(camera);
+    // Camera Node
+    let camera_base_transform = (Transform::default(), GlobalTransform::default());
+
+    // Camera
+    let camera = Camera3dBundle {
+        transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+        ..default()
+    };
+
+    let camera_entity = commands.spawn(camera).id();
+    let camera_base_entity = commands
+        .spawn(camera_base_transform)
+        .add_child(camera_entity)
+        .id();
+    commands.spawn(player_bundle).add_child(camera_base_entity);
 }
 
 pub struct PlayerPlugin;

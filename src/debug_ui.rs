@@ -1,25 +1,49 @@
 use crate::player::PlayerMarker;
 use bevy::prelude::*;
+use bevy_editor_pls::prelude::*;
 use bevy_egui::{egui, EguiContext, EguiPlugin};
 
 pub struct DebugUI;
 
+#[derive(Component)]
+pub struct DebugMarker;
+
+#[derive(StageLabel)]
+pub struct DebugStage;
+
 impl Plugin for DebugUI {
     fn build(&self, app: &mut App) {
-        app.add_plugin(EguiPlugin).add_system(player_position_ui);
+        app.add_plugin(EditorPlugin)
+            .add_startup_stage_after(
+                StartupStage::PostStartup,
+                DebugStage,
+                SystemStage::single_threaded(),
+            )
+            .add_startup_system_to_stage(DebugStage, camera_debug_render);
     }
 }
 
-fn player_position_ui(
-    mut egui_context: ResMut<EguiContext>,
-    query: Query<&Transform, With<PlayerMarker>>,
-    time: Res<Time>,
+fn camera_debug_render(
+    mut command: Commands,
+    cams: Query<Entity, With<Camera3d>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let transform = query.get_single().unwrap();
-    egui::Window::new("Player Position").show(egui_context.ctx_mut(), |ui| {
-        ui.label(format!("Player X: {}", transform.translation.x));
-        ui.label(format!("Player Y: {}", transform.translation.y));
-        ui.label(format!("Player Z: {}", transform.translation.z));
-        ui.label(format!("FPS: {}", 60.0 / time.delta_seconds()))
+    let tex_handle = asset_server.load("PNG/Red/texture_10.png");
+    let material_handle = materials.add(StandardMaterial {
+        base_color_texture: Some(tex_handle.clone()),
+        alpha_mode: AlphaMode::Blend,
+        unlit: false,
+        ..default()
     });
+    let pbr = PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Icosphere::default())),
+        material: material_handle,
+        ..default()
+    };
+    for cam_entity in cams.iter() {
+        let debug_entity = command.spawn((pbr.clone(), DebugMarker)).id();
+        command.entity(cam_entity).add_child(debug_entity);
+    }
 }

@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 bevy = { version = "0.9", features = ["dynamic", "png"] }
+bevy_editor_pls = "0.2.0"
 bevy_egui = "0.18.0"
 bevy_rapier3d = "0.19.0"
 rand = "0.8"
