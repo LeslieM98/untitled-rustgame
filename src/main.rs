@@ -19,7 +19,12 @@ fn main() {
         .run();
 }
 
-fn setup_scene(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
+fn setup_scene(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
+) {
     commands.spawn(PointLightBundle {
         point_light: PointLight {
             intensity: 1500.0,
@@ -29,12 +34,22 @@ fn setup_scene(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
         ..default()
     });
+    let tex_handle = asset_server.load("PNG/Dark/texture_01.png");
+    let material_handle = materials.add(StandardMaterial {
+        base_color_texture: Some(tex_handle.clone()),
+        alpha_mode: AlphaMode::Blend,
+        unlit: false,
+        ..default()
+    });
+    // Floor
     commands.spawn(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Plane::default())),
         transform: Transform {
             translation: Vec3::ZERO,
+            scale: Vec3::new(10.0, 1.0, 10.0),
             ..default()
         },
+        material: material_handle, 
         ..default()
     });
 }

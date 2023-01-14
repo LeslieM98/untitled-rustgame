@@ -45,12 +45,26 @@ pub fn move_player(
     }
 }
 
-pub fn spawn_player(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
+pub fn spawn_player(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let tex_handle = asset_server.load("PNG/Red/texture_01.png");
+    let material_handle = materials.add(StandardMaterial {
+        base_color_texture: Some(tex_handle.clone()),
+        alpha_mode: AlphaMode::Blend,
+        unlit: false,
+        ..default()
+    });
+
     let pbr = PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Capsule::default())),
+        material: material_handle,
+        transform: Transform::from_xyz(0.0, 1.0, 0.0),
         ..default()
     };
-
     // camera
     let camera = commands
         .spawn(Camera3dBundle {
