@@ -3,12 +3,17 @@ use bevy::prelude::*;
 
 #[derive(Component)]
 pub struct PlayerMarker;
+#[derive(Component)]
+struct CameraBaseMarker;
+#[derive(Component)]
+struct PlayerCameraMarker;
 
 #[derive(Bundle)]
 pub struct PlayerBundle {
     pub actor: Actor,
     pub player: PlayerMarker,
 }
+
 impl Default for PlayerBundle {
     fn default() -> Self {
         Self {
@@ -77,13 +82,20 @@ pub fn spawn_player(
     };
 
     // Camera Node
-    let camera_base_transform = (Transform::default(), GlobalTransform::default());
+    let camera_base_transform = (
+        Transform::default(),
+        GlobalTransform::default(),
+        CameraBaseMarker,
+    );
 
     // Camera
-    let camera = Camera3dBundle {
-        transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    };
+    let camera = (
+        Camera3dBundle {
+            transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+            ..default()
+        },
+        PlayerCameraMarker,
+    );
 
     let camera_entity = commands.spawn(camera).id();
     let camera_base_entity = commands
