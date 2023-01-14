@@ -1,12 +1,11 @@
 mod actor;
-mod player;
-mod player_ui;
 mod debug;
+mod player_ui;
 
 use bevy::prelude::*;
 use debug::DebugPlugin;
 
-use crate::player::*;
+use crate::actor::player::*;
 use crate::player_ui::PlayerUi;
 
 fn main() {
@@ -49,7 +48,7 @@ fn setup_scene(
             scale: Vec3::new(10.0, 1.0, 10.0),
             ..default()
         },
-        material: material_handle, 
+        material: material_handle,
         ..default()
     });
 }

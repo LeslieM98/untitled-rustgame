@@ -1,3 +1,5 @@
+pub mod player;
+
 use bevy::prelude::*;
 
 #[derive(Bundle)]

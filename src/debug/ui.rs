@@ -1,4 +1,4 @@
-use crate::player::PlayerCameraMarker;
+use crate::actor::player::PlayerCameraMarker;
 use bevy::{diagnostic::Diagnostics, prelude::*};
 use bevy_editor_pls::prelude::*;
 use bevy_egui::{egui, EguiContext, EguiPlugin};
@@ -9,8 +9,6 @@ pub struct DebugUI;
 
 #[derive(Component)]
 pub struct DebugMarker;
-
-
 
 impl Plugin for DebugUI {
     fn build(&self, app: &mut App) {
