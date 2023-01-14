@@ -19,8 +19,7 @@ fn main() {
         .run();
 }
 
-fn setup_scene(mut commands: Commands) {
-    // light
+fn setup_scene(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
     commands.spawn(PointLightBundle {
         point_light: PointLight {
             intensity: 1500.0,
@@ -30,9 +29,12 @@ fn setup_scene(mut commands: Commands) {
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
         ..default()
     });
-    // camera
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+    commands.spawn(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Plane::default())),
+        transform: Transform {
+            translation: Vec3::ZERO,
+            ..default()
+        },
         ..default()
     });
 }

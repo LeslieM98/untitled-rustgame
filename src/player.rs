@@ -5,12 +5,11 @@ use bevy::prelude::*;
 pub struct PlayerMarker;
 
 #[derive(Bundle)]
-pub struct Player {
+pub struct PlayerBundle {
     pub actor: Actor,
     pub player: PlayerMarker,
 }
-
-impl Default for Player {
+impl Default for PlayerBundle {
     fn default() -> Self {
         Self {
             actor: Default::default(),
@@ -33,10 +32,10 @@ pub fn move_player(
         direction.x -= 1.0;
     }
     if input.pressed(KeyCode::A) {
-        direction.z += 1.0;
+        direction.z -= 1.0;
     }
     if input.pressed(KeyCode::D) {
-        direction.z -= 1.0;
+        direction.z += 1.0;
     }
 
     if direction.length() > 0.001 {
@@ -52,13 +51,20 @@ pub fn spawn_player(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
         ..default()
     };
 
+    // camera
+    let camera = commands
+        .spawn(Camera3dBundle {
+            transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+            ..default()
+        })
+        .id();
+
     commands
-        .spawn(Player {
+        .spawn(PlayerBundle {
             actor: Actor { pbr, ..default() },
             ..default()
         })
-        .id()
-        .index();
+        .add_child(camera);
 }
 
 pub struct PlayerPlugin;
