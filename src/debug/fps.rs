@@ -1,15 +1,16 @@
 use crate::debug::DebugStage;
-use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
+use bevy::diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 
 pub struct FPSLabelPlugin;
 impl Plugin for FPSLabelPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(FrameTimeDiagnosticsPlugin::default())
-            .add_startup_system_to_stage(DebugStage, setup);
+            .add_startup_system(setup)
+            .add_system(text_update_system);
     }
 }
-
+// A unit struct to help identify the FPS UI component, since there may be many Text components
 #[derive(Component)]
 struct FpsText;
 
@@ -18,14 +19,24 @@ struct FpsText;
 struct ColorText;
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    // Text with one section
+    // Text with multiple sections
     commands.spawn((
-        // Create a TextBundle that has a Text with a single section.
-        TextBundle::from_section(
-            // Accepts a `String` or any type that converts into a `String`, such as `&str`
-            "hello\nbevy!",
-            TextStyle::default(),
-        ) // Set the alignment of the Text
+        // Create a TextBundle that has a Text with a list of sections.
+        TextBundle::from_sections([
+            TextSection::new(
+                "FPS: ",
+                TextStyle {
+                    font: asset_server.load("fonts/FiraMono-Medium.ttf"),
+                    font_size: 30.0,
+                    color: Color::WHITE,
+                },
+            ),
+            TextSection::from_style(TextStyle {
+                font: asset_server.load("fonts/FiraMono-Medium.ttf"),
+                font_size: 30.0,
+                color: Color::GOLD,
+            }),
+        ])
         .with_text_alignment(TextAlignment::TOP_CENTER)
         // Set the style of the TextBundle itself.
         .with_style(Style {
@@ -37,6 +48,17 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             },
             ..default()
         }),
-        ColorText,
+        FpsText,
     ));
+}
+
+fn text_update_system(diagnostics: Res<Diagnostics>, mut query: Query<&mut Text, With<FpsText>>) {
+    for mut text in &mut query {
+        if let Some(fps) = diagnostics.get(FrameTimeDiagnosticsPlugin::FPS) {
+            if let Some(value) = fps.smoothed() {
+                // Update the value of the second section
+                text.sections[1].value = format!("{value:.2}");
+            }
+        }
+    }
 }
