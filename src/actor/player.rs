@@ -120,28 +120,28 @@ pub fn move_player(
 ) {
     const VELOCITY: f32 = 3.0;
     let mut direction = Vec3::ZERO;
+    let mut transform = query.get_single_mut().unwrap();
     if input.pressed(KeyCode::W) {
-        direction.x += 1.0;
+        direction += transform.forward();
     }
     if input.pressed(KeyCode::S) {
-        direction.x -= 1.0;
+        direction += transform.back();
     }
     if input.pressed(KeyCode::A) {
-        direction.z -= 1.0;
+        direction += transform.left();
     }
     if input.pressed(KeyCode::D) {
-        direction.z += 1.0;
+        direction += transform.right();
     }
     if input.pressed(KeyCode::Space) {
-        direction.y += 1.0;
+        direction += transform.up();
     }
     if input.pressed(KeyCode::LShift) {
-        direction.y -= 1.0;
+        direction += transform.down();
     }
 
     if direction.length() > 0.001 {
         direction = direction.normalize();
-        let mut transform = query.get_single_mut().unwrap();
         transform.translation += direction * VELOCITY * time.delta_seconds();
     }
 }
