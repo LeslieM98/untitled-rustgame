@@ -1,3 +1,4 @@
+use crate::actor::health::BaseHealth;
 use crate::actor::Actor;
 use bevy::prelude::*;
 
@@ -52,5 +53,5 @@ fn spawn(
         ..default()
     };
 
-    commands.spawn(enemy);
+    commands.spawn(enemy).insert(BaseHealth::default());
 }
