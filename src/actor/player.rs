@@ -50,27 +50,38 @@ fn orbit_camera(
     windows: Res<Windows>,
     mut mouse_motion_events: EventReader<MouseMotion>,
     input_mouse: Res<Input<MouseButton>>,
-    mut query: Query<&mut Transform, With<CameraBaseNodeMarker>>,
+    mut camera_base: Query<&mut Transform, With<CameraBaseNodeMarker>>,
+    mut player: Query<&mut Transform, (With<PlayerMarker>, Without<CameraBaseNodeMarker>)>,
 ) {
-    if input_mouse.pressed(MouseButton::Left) {
-        let mut transform = query.get_single_mut().unwrap();
+    if input_mouse.pressed(MouseButton::Left) || input_mouse.pressed(MouseButton::Right) {
+        let mut camera_transform = camera_base.get_single_mut().unwrap();
+        let mut player_transform = player.get_single_mut().unwrap();
+
         let mouse_delta: Vec2 = mouse_motion_events.iter().map(|x| x.delta).sum();
         let window_size = get_primary_window_size(&windows);
 
         // up down
         let delta_y = mouse_delta.y / window_size.y * std::f32::consts::PI;
         let pitch = Quat::from_rotation_x(-delta_y);
-        let new_up_down_rot = transform.rotation * pitch; // rotate around local x axis
+        let new_up_down_rot = camera_transform.rotation * pitch; // rotate around local x axis
         let up = new_up_down_rot * Vec3::Y;
         let is_upside_down = up.y <= 0.0;
         if !is_upside_down {
-            transform.rotation = new_up_down_rot;
+            camera_transform.rotation = new_up_down_rot;
         }
 
         // left right
         let delta_x = mouse_delta.x / window_size.x * std::f32::consts::PI * 2.0;
         let yaw = Quat::from_rotation_y(-delta_x);
-        transform.rotation = yaw * transform.rotation; // rotate around global y axis (mind the order of operations)
+        if input_mouse.pressed(MouseButton::Left) {
+            // only rotate camera
+            let new_left_right_rot = yaw * camera_transform.rotation; // rotate around global y axis (mind the order of operations)
+            camera_transform.rotation = new_left_right_rot;
+        } else if input_mouse.pressed(MouseButton::Right) {
+            // also rotate player only around
+            let new_left_right_rot = yaw * player_transform.rotation; // rotate around global y axis (mind the order of operations)
+            player_transform.rotation = new_left_right_rot; // rotate around global y axis (mind the order of operations)
+        }
     }
 }
 
