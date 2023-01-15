@@ -1,6 +1,7 @@
 use crate::actor::target::PlayerTarget;
 use crate::actor::*;
 use bevy::input::mouse::{MouseMotion, MouseWheel};
+use bevy::prelude::system_adapter::new;
 use bevy::prelude::*;
 use bevy_egui::systems::InputEvents;
 use bevy_mod_picking::{
@@ -56,10 +57,17 @@ fn orbit_camera(
         let mouse_delta: Vec2 = mouse_motion_events.iter().map(|x| x.delta).sum();
         let window_size = get_primary_window_size(&windows);
 
+        // up down
         let delta_y = mouse_delta.y / window_size.y * std::f32::consts::PI;
         let pitch = Quat::from_rotation_x(-delta_y);
-        transform.rotation = transform.rotation * pitch; // rotate around local x axis
+        let new_up_down_rot = transform.rotation * pitch; // rotate around local x axis
+        let up = new_up_down_rot * Vec3::Y;
+        let is_upside_down = up.y <= 0.0;
+        if !is_upside_down {
+            transform.rotation = new_up_down_rot;
+        }
 
+        // left right
         let delta_x = mouse_delta.x / window_size.x * std::f32::consts::PI * 2.0;
         let yaw = Quat::from_rotation_y(-delta_x);
         transform.rotation = yaw * transform.rotation; // rotate around global y axis (mind the order of operations)
