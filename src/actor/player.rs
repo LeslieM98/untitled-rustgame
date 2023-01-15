@@ -13,7 +13,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(spawn_player)
             .add_system(move_player)
-            .add_system(pan_orbit_camera)
+            .add_system(orbit_camera)
             .add_system(chose_target)
             .add_system(deselect_target)
             .add_plugin(PickingPlugin)
@@ -25,6 +25,8 @@ impl Plugin for PlayerPlugin {
 pub struct PlayerMarker;
 #[derive(Component)]
 pub struct PlayerCameraMarker;
+#[derive(Component)]
+pub struct CameraBaseNode;
 
 #[derive(Bundle)]
 pub struct PlayerBundle {
@@ -41,91 +43,25 @@ impl Default for PlayerBundle {
     }
 }
 
-#[derive(Component)]
-struct PanOrbitCamera {
-    /// The "focus point" to orbit around. It is automatically updated when panning the camera
-    pub focus: Vec3,
-    pub radius: f32,
-    pub upside_down: bool,
-}
-
-impl Default for PanOrbitCamera {
-    fn default() -> Self {
-        PanOrbitCamera {
-            focus: Vec3::ZERO,
-            radius: 5.0,
-            upside_down: false,
-        }
-    }
-}
-
 /// Pan the camera with middle mouse click, zoom with scroll wheel, orbit with right mouse click.
-fn pan_orbit_camera(
+fn orbit_camera(
     windows: Res<Windows>,
-    mut ev_motion: EventReader<MouseMotion>,
-    mut ev_scroll: EventReader<MouseWheel>,
+    mut mouse_motion_events: EventReader<MouseMotion>,
     input_mouse: Res<Input<MouseButton>>,
-    mut query: Query<(&mut PanOrbitCamera, &mut Transform, &Projection)>,
+    mut query: Query<&mut Transform, With<CameraBaseNode>>,
 ) {
-    // change input mapping for orbit and panning here
-    let orbit_button = MouseButton::Left;
+    if input_mouse.pressed(MouseButton::Left) {
+        let mut transform = query.get_single_mut().unwrap();
+        let mouse_delta: Vec2 = mouse_motion_events.iter().map(|x| x.delta).sum();
+        let window_size = get_primary_window_size(&windows);
 
-    let mut rotation_move = Vec2::ZERO;
-    let mut scroll = 0.0;
-    let mut orbit_button_changed = false;
+        let delta_y = mouse_delta.y / window_size.y * std::f32::consts::PI;
+        let pitch = Quat::from_rotation_x(-delta_y);
+        transform.rotation = transform.rotation * pitch; // rotate around local x axis
 
-    if input_mouse.pressed(orbit_button) {
-        for ev in ev_motion.iter() {
-            rotation_move += ev.delta;
-        }
-    }
-    for ev in ev_scroll.iter() {
-        scroll += ev.y;
-    }
-    if input_mouse.just_released(orbit_button) || input_mouse.just_pressed(orbit_button) {
-        orbit_button_changed = true;
-    }
-
-    for (mut pan_orbit, mut transform, projection) in query.iter_mut() {
-        if orbit_button_changed {
-            // only check for upside down when orbiting started or ended this frame
-            // if the camera is "upside" down, panning horizontally would be inverted, so invert the input to make it correct
-            let up = transform.rotation * Vec3::Y;
-            pan_orbit.upside_down = up.y <= 0.0;
-        }
-
-        let mut any = false;
-        if rotation_move.length_squared() > 0.0 {
-            any = true;
-            let window = get_primary_window_size(&windows);
-            let delta_x = {
-                let delta = rotation_move.x / window.x * std::f32::consts::PI * 2.0;
-                if pan_orbit.upside_down {
-                    -delta
-                } else {
-                    delta
-                }
-            };
-            let delta_y = rotation_move.y / window.y * std::f32::consts::PI;
-            let yaw = Quat::from_rotation_y(-delta_x);
-            let pitch = Quat::from_rotation_x(-delta_y);
-            transform.rotation = yaw * transform.rotation; // rotate around global y axis
-            transform.rotation = transform.rotation * pitch; // rotate around local x axis
-        } else if scroll.abs() > 0.0 {
-            any = true;
-            pan_orbit.radius -= scroll * pan_orbit.radius * 0.2;
-            // dont allow zoom to reach zero or you get stuck
-            pan_orbit.radius = f32::max(pan_orbit.radius, 0.05);
-        }
-
-        if any {
-            // emulating parent/child to make the yaw/y-axis rotation behave like a turntable
-            // parent = x and y rotation
-            // child = z-offset
-            let rot_matrix = Mat3::from_quat(transform.rotation);
-            transform.translation =
-                pan_orbit.focus + rot_matrix.mul_vec3(Vec3::new(0.0, 0.0, pan_orbit.radius));
-        }
+        let delta_x = mouse_delta.x / window_size.x * std::f32::consts::PI * 2.0;
+        let yaw = Quat::from_rotation_y(-delta_x);
+        transform.rotation = yaw * transform.rotation; // rotate around global y axis (mind the order of operations)
     }
 }
 
@@ -140,7 +76,7 @@ pub fn move_player(
     input: Res<Input<KeyCode>>,
     time: Res<Time>,
 ) {
-    const VELOCITY: f32 = 1.0;
+    const VELOCITY: f32 = 3.0;
     let mut direction = Vec3::ZERO;
     if input.pressed(KeyCode::W) {
         direction.x += 1.0;
@@ -193,29 +129,30 @@ pub fn spawn_player(
         ..default()
     };
 
-    let camera_transform = Transform::from_xyz(0.0, 0.0, 4.0);
-    let orbit_radius = camera_transform.translation.length();
     // Camera
     let camera = (
         Camera3dBundle {
-            transform: camera_transform.looking_at(Vec3::ZERO, Vec3::Y),
+            transform: Transform::from_xyz(0.0, 0.0, 4.0).looking_at(Vec3::ZERO, Vec3::Y),
             ..default()
         },
         PlayerCameraMarker,
     );
 
     let camera_entity = commands
-        .spawn((
-            camera,
-            PanOrbitCamera {
-                radius: orbit_radius,
-                ..Default::default()
-            },
-        ))
+        .spawn(camera)
         .insert(PickingCameraBundle::default())
         .id();
 
-    commands.spawn(player_bundle).add_child(camera_entity);
+    let camera_base_entity = commands
+        .spawn((
+            TransformBundle::default(),
+            CameraBaseNode,
+            VisibilityBundle::default(),
+        ))
+        .add_child(camera_entity)
+        .id();
+
+    commands.spawn(player_bundle).add_child(camera_base_entity);
 }
 
 fn chose_target(
