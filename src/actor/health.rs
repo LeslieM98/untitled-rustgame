@@ -39,4 +39,14 @@ impl BaseHealth {
             0
         }
     }
+
+    pub fn get_percentage(&self) -> f32 {
+        if self.curr_hp == 0 {
+            0.0
+        } else if self.curr_hp == self.max_hp {
+            1.0
+        } else {
+            self.curr_hp as f32 / self.max_hp as f32
+        }
+    }
 }

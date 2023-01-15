@@ -84,6 +84,9 @@ fn spawn(
 
     commands
         .spawn(enemy2)
-        .insert(BaseHealth::default())
+        .insert(BaseHealth {
+            max_hp: 100,
+            curr_hp: 30,
+        })
         .insert(PickableBundle::default());
 }

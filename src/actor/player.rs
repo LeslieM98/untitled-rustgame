@@ -2,6 +2,7 @@ use crate::actor::target::PlayerTarget;
 use crate::actor::*;
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::prelude::*;
+use bevy_egui::systems::InputEvents;
 use bevy_mod_picking::{
     InteractablePickingPlugin, PickingCameraBundle, PickingEvent, PickingPlugin,
 };
@@ -14,6 +15,7 @@ impl Plugin for PlayerPlugin {
             .add_system(move_player)
             .add_system(pan_orbit_camera)
             .add_system(chose_target)
+            .add_system(deselect_target)
             .add_plugin(PickingPlugin)
             .add_plugin(InteractablePickingPlugin);
     }
@@ -230,6 +232,19 @@ fn chose_target(
                 commands.entity(*e).insert(PlayerTarget);
             }
             _ => {}
+        }
+    }
+}
+
+fn deselect_target(
+    mut commands: Commands,
+    keys: Res<Input<KeyCode>>,
+    current_target: Query<Entity, With<PlayerTarget>>,
+) {
+    if keys.just_pressed(KeyCode::Escape) {
+        if !current_target.is_empty() {
+            let entity = current_target.get_single().unwrap();
+            commands.entity(entity).remove::<PlayerTarget>();
         }
     }
 }

@@ -1,7 +1,7 @@
 pub mod enemy;
-mod health;
+pub mod health;
 pub mod player;
-mod target;
+pub mod target;
 
 use std::time::SystemTime;
 
