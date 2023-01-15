@@ -2,6 +2,7 @@ mod actor;
 mod debug;
 mod player_ui;
 
+use crate::actor::enemy::EnemyPlugin;
 use bevy::prelude::*;
 use debug::DebugPlugin;
 
@@ -14,6 +15,7 @@ fn main() {
         .add_plugin(PlayerPlugin)
         .add_plugin(DebugPlugin)
         .add_plugin(PlayerUi)
+        .add_plugin(EnemyPlugin)
         .add_startup_system(setup_scene)
         .run();
 }
