@@ -1,3 +1,5 @@
+mod target_tracker;
+
 use bevy::prelude::*;
 
 pub struct PlayerUi;

@@ -1,6 +1,7 @@
 use crate::actor::health::BaseHealth;
 use crate::actor::Actor;
 use bevy::prelude::*;
+use bevy_mod_picking::PickableBundle;
 
 pub struct EnemyPlugin;
 
@@ -19,6 +20,34 @@ pub struct Enemy {
     pub marker: EnemyMarker,
 }
 
+impl Enemy {
+    pub fn from_pos(
+        pos: Transform,
+        meshes: &mut ResMut<Assets<Mesh>>,
+        asset_server: &Res<AssetServer>,
+        materials: &mut ResMut<Assets<StandardMaterial>>,
+    ) -> Enemy {
+        let tex_handle = asset_server.load("PNG/Red/texture_04.png");
+        let material_handle = materials.add(StandardMaterial {
+            base_color_texture: Some(tex_handle.clone()),
+            alpha_mode: AlphaMode::Blend,
+            unlit: false,
+            ..default()
+        });
+
+        let pbr = PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Capsule::default())),
+            material: material_handle,
+            transform: pos,
+            ..default()
+        };
+        Enemy {
+            actor: Actor { pbr, ..default() },
+            ..default()
+        }
+    }
+}
+
 impl Default for Enemy {
     fn default() -> Self {
         Enemy {
@@ -34,24 +63,27 @@ fn spawn(
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let tex_handle = asset_server.load("PNG/Red/texture_04.png");
-    let material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(tex_handle.clone()),
-        alpha_mode: AlphaMode::Blend,
-        unlit: false,
-        ..default()
-    });
+    let enemy1 = Enemy::from_pos(
+        Transform::from_xyz(3.0, 1.0, 0.0),
+        &mut meshes,
+        &asset_server,
+        &mut materials,
+    );
 
-    let pbr = PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Capsule::default())),
-        material: material_handle,
-        transform: Transform::from_xyz(0.0, 1.0, 0.0),
-        ..default()
-    };
-    let enemy = Enemy {
-        actor: Actor { pbr, ..default() },
-        ..default()
-    };
+    commands
+        .spawn(enemy1)
+        .insert(BaseHealth::default())
+        .insert(PickableBundle::default());
 
-    commands.spawn(enemy).insert(BaseHealth::default());
+    let enemy2 = Enemy::from_pos(
+        Transform::from_xyz(-3.0, 1.0, 0.0),
+        &mut meshes,
+        &asset_server,
+        &mut materials,
+    );
+
+    commands
+        .spawn(enemy2)
+        .insert(BaseHealth::default())
+        .insert(PickableBundle::default());
 }

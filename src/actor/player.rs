@@ -1,6 +1,23 @@
+use crate::actor::target::PlayerTarget;
 use crate::actor::*;
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::prelude::*;
+use bevy_mod_picking::{
+    InteractablePickingPlugin, PickingCameraBundle, PickingEvent, PickingPlugin,
+};
+
+pub struct PlayerPlugin;
+
+impl Plugin for PlayerPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_startup_system(spawn_player)
+            .add_system(move_player)
+            .add_system(pan_orbit_camera)
+            .add_system(chose_target)
+            .add_plugin(PickingPlugin)
+            .add_plugin(InteractablePickingPlugin);
+    }
+}
 
 #[derive(Component)]
 pub struct PlayerMarker;
@@ -193,16 +210,26 @@ pub fn spawn_player(
                 ..Default::default()
             },
         ))
+        .insert(PickingCameraBundle::default())
         .id();
+
     commands.spawn(player_bundle).add_child(camera_entity);
 }
 
-pub struct PlayerPlugin;
-
-impl Plugin for PlayerPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_startup_system(spawn_player)
-            .add_system(move_player)
-            .add_system(pan_orbit_camera);
+fn chose_target(
+    mut commands: Commands,
+    mut current_target: Query<Entity, With<PlayerTarget>>,
+    mut events: EventReader<PickingEvent>,
+) {
+    for event in events.iter() {
+        match event {
+            PickingEvent::Clicked(e) => {
+                for selected_target in current_target.iter_mut() {
+                    commands.entity(selected_target).remove::<PlayerTarget>();
+                }
+                commands.entity(*e).insert(PlayerTarget);
+            }
+            _ => {}
+        }
     }
 }
