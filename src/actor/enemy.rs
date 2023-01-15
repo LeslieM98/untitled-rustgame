@@ -30,7 +30,6 @@ impl Enemy {
         let tex_handle = asset_server.load("PNG/Red/texture_04.png");
         let material_handle = materials.add(StandardMaterial {
             base_color_texture: Some(tex_handle.clone()),
-            alpha_mode: AlphaMode::Blend,
             unlit: false,
             ..default()
         });
