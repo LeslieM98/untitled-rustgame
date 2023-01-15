@@ -6,6 +6,7 @@ use bevy_egui::systems::InputEvents;
 use bevy_mod_picking::{
     InteractablePickingPlugin, PickingCameraBundle, PickingEvent, PickingPlugin,
 };
+use bevy_rapier3d::na::inf;
 
 pub struct PlayerPlugin;
 
@@ -16,6 +17,7 @@ impl Plugin for PlayerPlugin {
             .add_system(orbit_camera)
             .add_system(chose_target)
             .add_system(deselect_target)
+            .add_system(camera_scroll)
             .add_plugin(PickingPlugin)
             .add_plugin(InteractablePickingPlugin);
     }
@@ -26,7 +28,7 @@ pub struct PlayerMarker;
 #[derive(Component)]
 pub struct PlayerCameraMarker;
 #[derive(Component)]
-pub struct CameraBaseNode;
+pub struct CameraBaseNodeMarker;
 
 #[derive(Bundle)]
 pub struct PlayerBundle {
@@ -43,12 +45,11 @@ impl Default for PlayerBundle {
     }
 }
 
-/// Pan the camera with middle mouse click, zoom with scroll wheel, orbit with right mouse click.
 fn orbit_camera(
     windows: Res<Windows>,
     mut mouse_motion_events: EventReader<MouseMotion>,
     input_mouse: Res<Input<MouseButton>>,
-    mut query: Query<&mut Transform, With<CameraBaseNode>>,
+    mut query: Query<&mut Transform, With<CameraBaseNodeMarker>>,
 ) {
     if input_mouse.pressed(MouseButton::Left) {
         let mut transform = query.get_single_mut().unwrap();
@@ -62,6 +63,28 @@ fn orbit_camera(
         let delta_x = mouse_delta.x / window_size.x * std::f32::consts::PI * 2.0;
         let yaw = Quat::from_rotation_y(-delta_x);
         transform.rotation = yaw * transform.rotation; // rotate around global y axis (mind the order of operations)
+    }
+}
+
+fn camera_scroll(
+    mut query: Query<&mut Transform, With<PlayerCameraMarker>>,
+    mut scroll_events: EventReader<MouseWheel>,
+) {
+    const MIN_DISTANCE: f32 = 3.0;
+    const MAX_DISTANCE: f32 = 20.0;
+    if !scroll_events.is_empty() {
+        let delta: f32 = scroll_events.iter().map(|event| event.y).sum();
+        let mut transform = query.get_single_mut().unwrap();
+        let mut new_value = transform.translation.z + delta;
+        new_value = if new_value < MIN_DISTANCE {
+            MIN_DISTANCE
+        } else if new_value > MAX_DISTANCE {
+            MAX_DISTANCE
+        } else {
+            new_value
+        };
+
+        transform.translation.z = new_value;
     }
 }
 
@@ -146,7 +169,7 @@ pub fn spawn_player(
     let camera_base_entity = commands
         .spawn((
             TransformBundle::default(),
-            CameraBaseNode,
+            CameraBaseNodeMarker,
             VisibilityBundle::default(),
         ))
         .add_child(camera_entity)
