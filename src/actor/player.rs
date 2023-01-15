@@ -79,6 +79,12 @@ fn orbit_camera(
             camera_transform.rotation = new_left_right_rot;
         } else if input_mouse.pressed(MouseButton::Right) {
             // also rotate player only around
+            let camera_euler_rot = camera_transform.rotation.to_euler(EulerRot::YXZ).0;
+            camera_transform.rotation =
+                Quat::from_rotation_y(-camera_euler_rot) * camera_transform.rotation;
+            player_transform.rotation =
+                Quat::from_rotation_y(camera_euler_rot) * player_transform.rotation;
+
             let new_left_right_rot = yaw * player_transform.rotation; // rotate around global y axis (mind the order of operations)
             player_transform.rotation = new_left_right_rot; // rotate around global y axis (mind the order of operations)
         }
@@ -140,7 +146,7 @@ pub fn move_player(
         direction += transform.down();
     }
 
-    if direction.length() > 0.001 {
+    if direction != Vec3::ZERO {
         direction = direction.normalize();
         transform.translation += direction * VELOCITY * time.delta_seconds();
     }
