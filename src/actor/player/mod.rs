@@ -1,3 +1,4 @@
+pub mod action;
 pub mod camera;
 pub mod movement;
 pub mod targeting;
@@ -17,6 +18,7 @@ impl Plugin for PlayerPlugin {
             .add_system_set(movement::get_system_set())
             .add_system_set(camera::get_system_set())
             .add_system_set(targeting::get_system_set())
+            .add_system_set(action::get_system_set())
             .add_plugin(PickingPlugin)
             .add_plugin(InteractablePickingPlugin);
     }

@@ -31,6 +31,7 @@ impl BaseHealth {
 
     pub fn apply_damage(&mut self, amount: HealthType) -> HealthType {
         if amount > self.curr_hp {
+            info!("Ded");
             let overkill = amount - self.curr_hp;
             self.curr_hp = 0;
             overkill
