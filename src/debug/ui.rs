@@ -1,4 +1,4 @@
-use crate::actor::player::PlayerCameraMarker;
+use crate::actor::player::camera::PlayerCameraMarker;
 use bevy::{diagnostic::Diagnostics, prelude::*};
 use bevy_editor_pls::prelude::*;
 use bevy_egui::{egui, EguiContext, EguiPlugin};
