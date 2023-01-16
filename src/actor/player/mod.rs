@@ -2,7 +2,6 @@ pub mod camera;
 pub mod movement;
 pub mod targeting;
 
-use crate::actor::target::PlayerTarget;
 use crate::actor::*;
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::prelude::*;
