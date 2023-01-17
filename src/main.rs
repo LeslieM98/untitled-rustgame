@@ -5,6 +5,7 @@ mod settings;
 
 use crate::actor::enemy::EnemyPlugin;
 use bevy::prelude::*;
+use bevy::window::PresentMode;
 use debug::DebugPlugin;
 
 use crate::actor::player::*;
@@ -13,7 +14,14 @@ use crate::settings::SettingsPlugin;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            window: WindowDescriptor {
+                title: "Untiteled Game".to_string(),
+                present_mode: PresentMode::Immediate,
+                ..default()
+            },
+            ..default()
+        }))
         .add_plugin(PlayerPlugin)
         .add_plugin(DebugPlugin)
         .add_plugin(PlayerUi)
