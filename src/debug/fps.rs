@@ -1,4 +1,3 @@
-use crate::debug::DebugStage;
 use bevy::diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 

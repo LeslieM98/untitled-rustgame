@@ -1,10 +1,8 @@
 use crate::actor::health::BaseHealth;
 use crate::actor::player::camera::PlayerCameraMarker;
-use crate::actor::player::PlayerMarker;
 use crate::actor::target::PlayerTarget;
 use bevy::app::App;
 use bevy::prelude::*;
-use bevy_rapier3d::parry::transformation::utils::transform;
 
 pub struct TargetTrackerUIPlugin;
 
@@ -21,7 +19,7 @@ impl Plugin for TargetTrackerUIPlugin {
     }
 }
 
-fn instantiate(mut commands: &mut Commands, health: &BaseHealth, position: &Vec2) {
+fn instantiate(commands: &mut Commands, health: &BaseHealth, position: &Vec2) {
     let width = 100.0;
     commands
         .spawn(NodeBundle {

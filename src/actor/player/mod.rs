@@ -7,7 +7,7 @@ use crate::actor::*;
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::prelude::*;
 use bevy_mod_picking::{
-    InteractablePickingPlugin, PickingCameraBundle, PickingEvent, PickingPlugin,
+    InteractablePickingPlugin, PickingCameraBundle, PickingPlugin,
 };
 
 pub struct PlayerPlugin;
