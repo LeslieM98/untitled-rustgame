@@ -16,8 +16,7 @@ pub struct TargetTrackerUIHealthMarker;
 impl Plugin for TargetTrackerUIPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(on_target_selected)
-            .add_system(refresh_on_health_change)
-            .add_system(refresh_on_camera_movement)
+            .add_system(refresh)
             .add_system_to_stage(CoreStage::PostUpdate, on_target_deselected);
     }
 }
@@ -60,42 +59,22 @@ fn instantiate(mut commands: &mut Commands, health: &BaseHealth, position: &Vec2
         });
 }
 
-fn refresh_on_health_change(
-    mut commands: Commands,
-    ui_query: Query<Entity, With<TargetTrackerUIHealthMarker>>,
-    health_query: Query<(&GlobalTransform, &BaseHealth), (With<PlayerTarget>, Changed<BaseHealth>)>,
-    camera_query: Query<(&Camera, &GlobalTransform), With<PlayerCameraMarker>>,
-) {
-    if !ui_query.is_empty() {
-        for ui in ui_query.iter() {
-            let (camera, camera_transform) = camera_query.get_single().expect("No camera found");
-            for (transform, health_instance) in health_query.iter() {
-                let ui_pos = camera.world_to_viewport(camera_transform, transform.translation());
-                match ui_pos {
-                    Some(pos) => {
-                        commands.entity(ui).despawn_recursive();
-                        instantiate(&mut commands, health_instance, &pos);
-                    }
-                    _ => {}
-                }
-            }
-        }
-    }
-}
-
-fn refresh_on_camera_movement(
+fn refresh(
     mut commands: Commands,
     ui_query: Query<Entity, With<TargetTrackerUIMarker>>,
-    health_query: Query<(&GlobalTransform, &BaseHealth), With<PlayerTarget>>,
+    health_query: Query<
+        (&GlobalTransform, &BaseHealth, ChangeTrackers<BaseHealth>),
+        With<PlayerTarget>,
+    >,
     camera_query: Query<
-        (&Camera, &GlobalTransform),
-        (With<PlayerCameraMarker>, Changed<GlobalTransform>),
+        (&Camera, &GlobalTransform, ChangeTrackers<GlobalTransform>),
+        With<PlayerCameraMarker>,
     >,
 ) {
-    if !ui_query.is_empty() {
-        for ui in ui_query.iter() {
-            for (camera, camera_transform) in camera_query.iter() {
-                for (transform, health_instance) in health_query.iter() {
+    for ui in ui_query.iter() {
+        for (camera, camera_transform, camera_transform_tracker) in camera_query.iter() {
+            for (transform, health_instance, health_tracker) in health_query.iter() {
+                if health_tracker.is_changed() || camera_transform_tracker.is_changed() {
                     let ui_pos =
                         camera.world_to_viewport(camera_transform, transform.translation());
                     match ui_pos {
