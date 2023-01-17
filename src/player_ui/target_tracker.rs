@@ -67,33 +67,8 @@ fn refresh_on_health_change(
     camera_query: Query<(&Camera, &GlobalTransform), With<PlayerCameraMarker>>,
 ) {
     if !ui_query.is_empty() {
-        let ui = ui_query.get_single().expect("No ui found");
-        let (camera, camera_transform) = camera_query.get_single().expect("No camera found");
-        for (transform, health_instance) in health_query.iter() {
-            let ui_pos = camera.world_to_viewport(camera_transform, transform.translation());
-            match ui_pos {
-                Some(pos) => {
-                    commands.entity(ui).despawn_recursive();
-                    instantiate(&mut commands, health_instance, &pos);
-                }
-                _ => {}
-            }
-        }
-    }
-}
-
-fn refresh_on_camera_movement(
-    mut commands: Commands,
-    ui_query: Query<Entity, With<TargetTrackerUIHealthMarker>>,
-    health_query: Query<(&GlobalTransform, &BaseHealth), With<PlayerTarget>>,
-    camera_query: Query<
-        (&Camera, &GlobalTransform),
-        (With<PlayerCameraMarker>, Changed<GlobalTransform>),
-    >,
-) {
-    if !ui_query.is_empty() {
-        let ui = ui_query.get_single().unwrap();
-        for (camera, camera_transform) in camera_query.iter() {
+        for ui in ui_query.iter() {
+            let (camera, camera_transform) = camera_query.get_single().expect("No camera found");
             for (transform, health_instance) in health_query.iter() {
                 let ui_pos = camera.world_to_viewport(camera_transform, transform.translation());
                 match ui_pos {
@@ -102,6 +77,34 @@ fn refresh_on_camera_movement(
                         instantiate(&mut commands, health_instance, &pos);
                     }
                     _ => {}
+                }
+            }
+        }
+    }
+}
+
+fn refresh_on_camera_movement(
+    mut commands: Commands,
+    ui_query: Query<Entity, With<TargetTrackerUIMarker>>,
+    health_query: Query<(&GlobalTransform, &BaseHealth), With<PlayerTarget>>,
+    camera_query: Query<
+        (&Camera, &GlobalTransform),
+        (With<PlayerCameraMarker>, Changed<GlobalTransform>),
+    >,
+) {
+    if !ui_query.is_empty() {
+        for ui in ui_query.iter() {
+            for (camera, camera_transform) in camera_query.iter() {
+                for (transform, health_instance) in health_query.iter() {
+                    let ui_pos =
+                        camera.world_to_viewport(camera_transform, transform.translation());
+                    match ui_pos {
+                        Some(pos) => {
+                            commands.entity(ui).despawn_recursive();
+                            instantiate(&mut commands, health_instance, &pos);
+                        }
+                        _ => {}
+                    }
                 }
             }
         }
