@@ -1,4 +1,5 @@
 use crate::actor::health::BaseHealth;
+use crate::actor::player::PlayerMarker;
 use crate::actor::target::PlayerTarget;
 use bevy::app::App;
 use bevy::prelude::*;
@@ -13,11 +14,12 @@ pub struct TargetTrackerUIHealthMarker;
 impl Plugin for TargetTrackerUIPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(on_target_selected)
+            .add_system(refresh)
             .add_system_to_stage(CoreStage::PostUpdate, on_target_deselected);
     }
 }
 
-fn instantiate(mut commands: Commands, health: &BaseHealth) {
+fn instantiate(mut commands: &mut Commands, health: &BaseHealth) {
     let width = 100.0;
     commands
         .spawn(NodeBundle {
@@ -55,10 +57,24 @@ fn instantiate(mut commands: Commands, health: &BaseHealth) {
         });
 }
 
-fn on_target_selected(commands: Commands, target: Query<&BaseHealth, Changed<PlayerTarget>>) {
+fn refresh(
+    mut commands: Commands,
+    ui_query: Query<Entity, With<TargetTrackerUIHealthMarker>>,
+    health_query: Query<&BaseHealth, (With<PlayerTarget>, Changed<BaseHealth>)>,
+) {
+    if !ui_query.is_empty() {
+        let ui = ui_query.get_single().unwrap();
+        for health_instance in health_query.iter() {
+            commands.entity(ui).despawn_recursive();
+
+            instantiate(&mut commands, health_instance);
+        }
+    }
+}
+fn on_target_selected(mut commands: Commands, target: Query<&BaseHealth, Changed<PlayerTarget>>) {
     if !target.is_empty() {
         let unwrapped = target.get_single().unwrap();
-        instantiate(commands, unwrapped);
+        instantiate(&mut commands, unwrapped);
     }
 }
 
@@ -68,7 +84,8 @@ fn on_target_deselected(
     removed_targets: RemovedComponents<PlayerTarget>,
 ) {
     for _ in removed_targets.iter() {
-        let entity = old_ui.get_single().unwrap();
-        commands.entity(entity).despawn_recursive();
+        for ui in old_ui.iter() {
+            commands.entity(ui).despawn_recursive();
+        }
     }
 }
