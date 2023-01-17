@@ -23,37 +23,11 @@ fn main() {
         .run();
 }
 
-fn setup_scene(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    asset_server: Res<AssetServer>,
-) {
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
-            ..default()
-        },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
-        ..default()
-    });
-    let tex_handle = asset_server.load("PNG/Dark/texture_01.png");
-    let material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(tex_handle.clone()),
-        alpha_mode: AlphaMode::Blend,
-        unlit: false,
-        ..default()
-    });
-    // Floor
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Plane::default())),
-        transform: Transform {
-            translation: Vec3::ZERO,
-            scale: Vec3::new(10.0, 1.0, 10.0),
-            ..default()
-        },
-        material: material_handle,
-        ..default()
+fn setup_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let my_gltf = asset_server.load("glTF/Debug_Scene.gltf#Scene0");
+    commands.spawn(SceneBundle {
+        scene: my_gltf,
+        transform: Transform::from_xyz(2.0, 0.0, -5.0),
+        ..Default::default()
     });
 }
