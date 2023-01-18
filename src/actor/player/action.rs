@@ -1,4 +1,4 @@
-use crate::actor::health::BaseHealth;
+use crate::actor::health::Health;
 use crate::actor::target::PlayerTarget;
 use crate::settings::controls::ActionBarAction;
 use bevy::prelude::*;
@@ -10,7 +10,7 @@ pub fn get_system_set() -> SystemSet {
 
 fn action(
     actions: Query<&ActionState<ActionBarAction>>,
-    mut target_query: Query<&mut BaseHealth, With<PlayerTarget>>,
+    mut target_query: Query<&mut Health, With<PlayerTarget>>,
 ) {
     for mut health in target_query.iter_mut() {
         for action in actions.iter() {

@@ -1,4 +1,4 @@
-use crate::actor::health::BaseHealth;
+use crate::actor::health::Health;
 use crate::actor::Actor;
 use bevy::prelude::*;
 use bevy_mod_picking::PickableBundle;
@@ -71,7 +71,7 @@ fn spawn(
 
     commands
         .spawn(enemy1)
-        .insert(BaseHealth::default())
+        .insert(Health::default())
         .insert(PickableBundle::default());
 
     let enemy2 = Enemy::from_pos(
@@ -83,9 +83,6 @@ fn spawn(
 
     commands
         .spawn(enemy2)
-        .insert(BaseHealth {
-            max_hp: 100,
-            curr_hp: 30,
-        })
+        .insert(Health::with_current_health(30))
         .insert(PickableBundle::default());
 }

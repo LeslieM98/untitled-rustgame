@@ -1,4 +1,4 @@
-use crate::actor::health::BaseHealth;
+use crate::actor::health::Health;
 use crate::actor::player::camera::PlayerCameraMarker;
 use crate::actor::target::PlayerTarget;
 use bevy::app::App;
@@ -19,7 +19,7 @@ impl Plugin for TargetTrackerUIPlugin {
     }
 }
 
-fn instantiate(commands: &mut Commands, health: &BaseHealth, position: &Vec2) {
+fn instantiate(commands: &mut Commands, health: &Health, position: &Vec2) {
     let width = 100.0;
     commands
         .spawn(NodeBundle {
@@ -61,7 +61,7 @@ fn refresh(
     mut commands: Commands,
     ui_query: Query<Entity, With<TargetTrackerUIMarker>>,
     health_query: Query<
-        (&GlobalTransform, &BaseHealth, ChangeTrackers<BaseHealth>),
+        (&GlobalTransform, &Health, ChangeTrackers<Health>),
         With<PlayerTarget>,
     >,
     camera_query: Query<
@@ -89,7 +89,7 @@ fn refresh(
 }
 fn on_target_selected(
     mut commands: Commands,
-    target: Query<(&GlobalTransform, &BaseHealth), Changed<PlayerTarget>>,
+    target: Query<(&GlobalTransform, &Health), Changed<PlayerTarget>>,
     camera_query: Query<(&Camera, &GlobalTransform), With<PlayerCameraMarker>>,
 ) {
     if !target.is_empty() {
