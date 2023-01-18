@@ -69,11 +69,6 @@ fn spawn(
         &mut materials,
     );
 
-    commands
-        .spawn(enemy1)
-        .insert(Health::default())
-        .insert(PickableBundle::default());
-
     let enemy2 = Enemy::from_pos(
         Transform::from_xyz(-3.0, 1.0, 0.0),
         &mut meshes,
@@ -81,8 +76,6 @@ fn spawn(
         &mut materials,
     );
 
-    commands
-        .spawn(enemy2)
-        .insert(Health::with_current_health(30))
-        .insert(PickableBundle::default());
+    commands.spawn(enemy1);
+    commands.spawn(enemy2);
 }
