@@ -3,7 +3,8 @@ use bevy::utils::HashMap;
 
 type StatType = i32;
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Reflect)]
+#[reflect(Component)]
 pub struct Stats {
     pub constitution: StatType,
     pub intelligence: StatType,

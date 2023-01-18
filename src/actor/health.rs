@@ -2,7 +2,8 @@ use bevy::prelude::*;
 
 type HealthType = u32;
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
+#[reflect(Component)]
 pub struct Health {
     base_hp: HealthType,
     curr_hp: HealthType,
