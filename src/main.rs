@@ -2,6 +2,7 @@ mod actor;
 mod debug;
 mod player_ui;
 mod settings;
+mod status_event;
 
 use crate::actor::enemy::EnemyPlugin;
 use bevy::prelude::*;
@@ -11,6 +12,7 @@ use debug::DebugPlugin;
 use crate::actor::player::*;
 use crate::player_ui::PlayerUi;
 use crate::settings::SettingsPlugin;
+use crate::status_event::StatusEventPlugin;
 
 fn main() {
     App::new()
@@ -27,6 +29,7 @@ fn main() {
         .add_plugin(PlayerUi)
         .add_plugin(EnemyPlugin)
         .add_plugin(SettingsPlugin)
+        .add_plugin(StatusEventPlugin)
         .add_startup_system(setup_scene)
         .run();
 }

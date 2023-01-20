@@ -1,6 +1,6 @@
-use crate::actor::health::Health;
 use crate::actor::target::PlayerTarget;
 use crate::settings::controls::ActionBarAction;
+use crate::status_event::*;
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::ActionState;
 
@@ -10,12 +10,14 @@ pub fn get_system_set() -> SystemSet {
 
 fn action(
     actions: Query<&ActionState<ActionBarAction>>,
-    mut target_query: Query<&mut Health, With<PlayerTarget>>,
+    mut target_query: Query<&mut ActionReceivedEventQueue, With<PlayerTarget>>,
 ) {
-    for mut health in target_query.iter_mut() {
-        for action in actions.iter() {
-            if action.just_pressed(ActionBarAction::Button1) {
-                health.apply_damage(10);
+    for action in actions.iter() {
+        if action.just_pressed(ActionBarAction::Button1) {
+            for mut target_queue in &mut target_query {
+                target_queue.events.push(ActionReceivedEvent {
+                    apply: Box::new(|| info!("Bam!")),
+                });
             }
         }
     }
