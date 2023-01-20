@@ -1,5 +1,5 @@
-use crate::actor::health::Health;
 use crate::actor::player::camera::PlayerCameraMarker;
+use crate::actor::status::Stats;
 use crate::actor::target::PlayerTarget;
 use bevy::app::App;
 use bevy::prelude::*;
@@ -19,7 +19,7 @@ impl Plugin for TargetTrackerUIPlugin {
     }
 }
 
-fn instantiate(commands: &mut Commands, health: &Health, position: &Vec2) {
+fn instantiate(commands: &mut Commands, stats: &Stats, position: &Vec2) {
     let width = 100.0;
     commands
         .spawn(NodeBundle {
@@ -41,7 +41,7 @@ fn instantiate(commands: &mut Commands, health: &Health, position: &Vec2) {
             parent
                 .spawn(NodeBundle {
                     style: Style {
-                        size: Size::new(Val::Px(width * health.get_percentage()), Val::Px(20.0)),
+                        size: Size::new(Val::Px(width * stats.get_hp_percentage()), Val::Px(20.0)),
                         position_type: PositionType::Relative,
                         position: UiRect {
                             left: Val::Px(0.0),
@@ -60,10 +60,7 @@ fn instantiate(commands: &mut Commands, health: &Health, position: &Vec2) {
 fn refresh(
     mut commands: Commands,
     ui_query: Query<Entity, With<TargetTrackerUIMarker>>,
-    health_query: Query<
-        (&GlobalTransform, &Health, ChangeTrackers<Health>),
-        With<PlayerTarget>,
-    >,
+    stat_query: Query<(&GlobalTransform, &Stats, ChangeTrackers<Stats>), With<PlayerTarget>>,
     camera_query: Query<
         (&Camera, &GlobalTransform, ChangeTrackers<GlobalTransform>),
         With<PlayerCameraMarker>,
@@ -71,14 +68,14 @@ fn refresh(
 ) {
     for ui in ui_query.iter() {
         for (camera, camera_transform, camera_transform_tracker) in camera_query.iter() {
-            for (transform, health_instance, health_tracker) in health_query.iter() {
-                if health_tracker.is_changed() || camera_transform_tracker.is_changed() {
+            for (transform, stat_instance, stat_tracker) in stat_query.iter() {
+                if stat_tracker.is_changed() || camera_transform_tracker.is_changed() {
                     let ui_pos =
                         camera.world_to_viewport(camera_transform, transform.translation());
                     match ui_pos {
                         Some(pos) => {
                             commands.entity(ui).despawn_recursive();
-                            instantiate(&mut commands, health_instance, &pos);
+                            instantiate(&mut commands, stat_instance, &pos);
                         }
                         _ => {}
                     }
@@ -89,15 +86,15 @@ fn refresh(
 }
 fn on_target_selected(
     mut commands: Commands,
-    target: Query<(&GlobalTransform, &Health), Changed<PlayerTarget>>,
+    target: Query<(&GlobalTransform, &Stats), Changed<PlayerTarget>>,
     camera_query: Query<(&Camera, &GlobalTransform), With<PlayerCameraMarker>>,
 ) {
     if !target.is_empty() {
-        let (target_transform, target_health) = target.get_single().unwrap();
+        let (target_transform, target_stats) = target.get_single().unwrap();
         let (camera, camera_transform) = camera_query.get_single().unwrap();
         let ui_pos = camera.world_to_viewport(camera_transform, target_transform.translation());
         match ui_pos {
-            Some(pos) => instantiate(&mut commands, target_health, &pos),
+            Some(pos) => instantiate(&mut commands, target_stats, &pos),
             _ => {}
         }
     }

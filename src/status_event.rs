@@ -1,4 +1,4 @@
-use crate::actor::health::Health;
+use crate::actor::status::Stats;
 use bevy::app::App;
 use bevy::prelude::*;
 use std::ops::Deref;
@@ -34,7 +34,7 @@ fn resolve_events(
     }
 }
 
-fn init(mut commands: Commands, health_queries: Query<Entity, With<Health>>) {
+fn init(mut commands: Commands, health_queries: Query<Entity, With<Stats>>) {
     for entity in &health_queries {
         commands
             .entity(entity)

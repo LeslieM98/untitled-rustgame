@@ -1,4 +1,3 @@
-use crate::actor::health::Health;
 use crate::actor::Actor;
 use bevy::prelude::*;
 use bevy_mod_picking::PickableBundle;
