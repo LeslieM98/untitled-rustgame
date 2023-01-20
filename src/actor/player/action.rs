@@ -16,7 +16,9 @@ fn action(
         if action.just_pressed(ActionBarAction::Button1) {
             for mut target_queue in &mut target_query {
                 target_queue.events.push(ActionReceivedEvent {
-                    apply: Box::new(|| info!("Bam!")),
+                    apply: Box::new(|target_stats| {
+                        target_stats.set_current_hp(target_stats.get_current_hp() - 10)
+                    }),
                 });
             }
         }

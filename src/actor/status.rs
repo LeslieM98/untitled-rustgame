@@ -31,6 +31,10 @@ impl Stats {
         *self.additional_stats.get(Stats::CURR_HP).unwrap()
     }
 
+    pub fn set_current_hp(&mut self, val: StatType) {
+        *self.additional_stats.get_mut(Self::CURR_HP).unwrap() = val;
+    }
+
     pub fn get_hp_percentage(&self) -> f32 {
         self.get_current_hp() as f32 / self.get_max_hp() as f32
     }

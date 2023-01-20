@@ -17,16 +17,16 @@ pub struct ActionReceivedEventQueue {
 }
 
 pub struct ActionReceivedEvent {
-    pub apply: Box<dyn Fn() -> () + Sync + Send>,
+    pub apply: Box<dyn Fn(&mut Stats) -> () + Sync + Send>,
 }
 
 fn resolve_events(
-    mut affected_query: Query<(Entity, &ActionReceivedEventQueue)>,
+    mut affected_query: Query<(Entity, &mut Stats, &ActionReceivedEventQueue)>,
     mut commands: Commands,
 ) {
-    for (entity, event_queue) in affected_query.iter_mut() {
+    for (entity, mut stats, event_queue) in affected_query.iter_mut() {
         for event in &event_queue.events {
-            event.apply.deref()();
+            event.apply.deref()(&mut stats);
         }
         commands
             .entity(entity)
