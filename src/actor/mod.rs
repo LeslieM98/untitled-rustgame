@@ -1,4 +1,4 @@
-pub mod enemy;
+pub mod npc;
 pub mod player;
 pub mod status;
 pub mod target;
@@ -9,11 +9,37 @@ use crate::actor::status::Stats;
 use bevy::prelude::*;
 use bevy_mod_picking::PickableBundle;
 
+#[derive(Component)]
+pub enum CombatStatus {
+    InCombat,
+    OutOfCombat,
+}
+
+impl Default for CombatStatus {
+    fn default() -> Self {
+        Self::OutOfCombat
+    }
+}
+
+#[derive(Component)]
+pub enum Relationship {
+    Enemy,
+    Neutral,
+    Friend,
+}
+
+impl Default for Relationship {
+    fn default() -> Self {
+        Self::Neutral
+    }
+}
+
 #[derive(Bundle, Default)]
 pub struct Actor {
     pub name: Name,
     pub pbr: PbrBundle,
     pub stats: Stats,
+    pub combat_status: CombatStatus,
     pickable: PickableBundle,
 }
 

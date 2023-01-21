@@ -4,7 +4,7 @@ mod player_ui;
 mod settings;
 mod status_event;
 
-use crate::actor::enemy::EnemyPlugin;
+use crate::actor::npc::EnemyPlugin;
 use bevy::prelude::*;
 use bevy::window::PresentMode;
 use debug::DebugPlugin;

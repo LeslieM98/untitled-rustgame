@@ -11,12 +11,12 @@ impl Plugin for EnemyPlugin {
 }
 
 #[derive(Component)]
-pub struct EnemyMarker;
+pub struct NPCMarker;
 
 #[derive(Bundle)]
 pub struct Enemy {
     pub actor: Actor,
-    pub marker: EnemyMarker,
+    pub marker: NPCMarker,
 }
 
 impl Enemy {
@@ -50,7 +50,7 @@ impl Default for Enemy {
     fn default() -> Self {
         Enemy {
             actor: Actor::default(),
-            marker: EnemyMarker,
+            marker: NPCMarker,
         }
     }
 }
