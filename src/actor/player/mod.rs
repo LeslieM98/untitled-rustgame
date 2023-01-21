@@ -6,9 +6,7 @@ pub mod targeting;
 use crate::actor::*;
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::prelude::*;
-use bevy_mod_picking::{
-    InteractablePickingPlugin, PickingCameraBundle, PickingPlugin,
-};
+use bevy_mod_picking::{InteractablePickingPlugin, PickingCameraBundle, PickingPlugin};
 
 pub struct PlayerPlugin;
 
@@ -58,7 +56,7 @@ pub fn spawn_player(
     let pbr = PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Capsule::default())),
         material: material_handle,
-        transform: Transform::from_xyz(0.0, 1.0, 0.0),
+        transform: Transform::from_xyz(0.0, 1.0, -10.0),
         ..default()
     };
     let player_bundle = PlayerBundle {
