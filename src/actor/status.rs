@@ -6,17 +6,17 @@ type StatFloatType = f32;
 
 #[derive(Component)]
 pub struct Stats {
-    pub movement_modifier: StatFloatType,
     pub additional_stats: HashMap<&'static str, StatType>,
 }
 
 impl Default for Stats {
     fn default() -> Self {
         let mut map = HashMap::new();
-        map.insert(Stats::CURR_HP, 100);
-        map.insert(Stats::MAX_HP, 100);
+        map.insert(Self::CURR_HP, 100);
+        map.insert(Self::MAX_HP, 100);
+        map.insert(Self::MOVEMENT_SPEED_MODIFIER, 0);
+        map.insert(Self::BASE_GLOBAL_COOLDOWN, 1000);
         Self {
-            movement_modifier: 1.0,
             additional_stats: map,
         }
     }
@@ -25,14 +25,36 @@ impl Default for Stats {
 impl Stats {
     pub const MAX_HP: &'static str = "max_hp";
     pub const CURR_HP: &'static str = "curr_hp";
+    pub const BASE_GLOBAL_COOLDOWN: &'static str = "base_global_cooldown";
+    pub const MOVEMENT_SPEED_MODIFIER: &'static str = "movement_speed";
+
+    pub const BASE_MOVEMENT_SPEED: StatType = 1000;
     pub const BASE_VELOCITY: StatFloatType = 3.0;
 
+    pub fn get_stat(&self, key: &'static str) -> StatType {
+        if self.additional_stats.contains_key(key) {
+            *self
+                .additional_stats
+                .get(key)
+                .unwrap_or_else(|| panic!("Error getting stat '{}'", key))
+        } else {
+            StatType::default()
+        }
+    }
+
+    pub fn get_stat_mut(&mut self, key: &'static str) -> &mut StatType {
+        if !self.additional_stats.contains_key(key) {
+            self.additional_stats.insert(key, StatType::default());
+        }
+        self.additional_stats.get_mut(key).unwrap()
+    }
+
     pub fn get_max_hp(&self) -> StatType {
-        *self.additional_stats.get(Stats::MAX_HP).unwrap()
+        self.get_stat(Self::MAX_HP)
     }
 
     pub fn get_current_hp(&self) -> StatType {
-        *self.additional_stats.get(Stats::CURR_HP).unwrap()
+        self.get_stat(Self::CURR_HP)
     }
 
     pub fn set_current_hp(&mut self, val: StatType) {
@@ -44,6 +66,8 @@ impl Stats {
     }
 
     pub fn get_movement_velocity(&self) -> StatFloatType {
-        self.movement_modifier * Stats::BASE_VELOCITY
+        (self.get_stat(Self::MOVEMENT_SPEED_MODIFIER) + Self::BASE_MOVEMENT_SPEED) as StatFloatType
+            / Self::BASE_MOVEMENT_SPEED as StatFloatType
+            * Self::BASE_VELOCITY
     }
 }

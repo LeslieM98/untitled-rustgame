@@ -59,8 +59,14 @@ pub fn spawn_player(
         transform: Transform::from_xyz(0.0, 1.0, -10.0),
         ..default()
     };
+    let mut player_stats = Stats::default();
+    *player_stats.get_stat_mut(Stats::MOVEMENT_SPEED_MODIFIER) = 1000;
     let player_bundle = PlayerBundle {
-        actor: Actor { pbr, ..default() },
+        actor: Actor {
+            pbr,
+            stats: player_stats,
+            ..default()
+        },
         ..default()
     };
 
