@@ -1,13 +1,21 @@
 use crate::actor::status::Stats;
 use bevy::app::App;
 use bevy::prelude::*;
+use bevy::time::FixedTimestep;
 use std::ops::Deref;
+
+const TICK_RATE: f64 = 64.0;
 
 pub struct StatusEventPlugin;
 impl Plugin for StatusEventPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system_to_stage(StartupStage::PostStartup, init)
-            .add_system_to_stage(CoreStage::PostUpdate, resolve_events);
+            .add_system_set_to_stage(
+                CoreStage::PostUpdate,
+                SystemSet::new()
+                    .with_system(resolve_events)
+                    .with_run_criteria(FixedTimestep::steps_per_second(TICK_RATE)),
+            );
     }
 }
 
