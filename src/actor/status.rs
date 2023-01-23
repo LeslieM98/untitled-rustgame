@@ -4,7 +4,7 @@ use bevy::utils::HashMap;
 type StatType = i32;
 type StatFloatType = f32;
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct Stats {
     pub additional_stats: HashMap<&'static str, StatType>,
 }
