@@ -1,4 +1,4 @@
-pub mod damage_event;
+pub mod health_event;
 
 use bevy::app::App;
 use bevy::prelude::*;
@@ -9,10 +9,10 @@ const TICK_RATE: f64 = 64.0;
 pub struct StatusEventPlugin;
 impl Plugin for StatusEventPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system_to_stage(StartupStage::PostStartup, damage_event::init)
+        app.add_startup_system_to_stage(StartupStage::PostStartup, health_event::init)
             .add_system_set_to_stage(
                 CoreStage::PostUpdate,
-                damage_event::get_system_set()
+                health_event::get_system_set()
                     .with_run_criteria(FixedTimestep::steps_per_second(TICK_RATE)),
             );
     }
