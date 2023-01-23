@@ -1,4 +1,5 @@
-use crate::actor::target::PlayerTarget;
+use crate::actor::player::PlayerMarker;
+use crate::actor::target::{Target, Targetable};
 use bevy::prelude::*;
 use bevy_mod_picking::PickingEvent;
 
@@ -10,30 +11,29 @@ pub fn get_system_set() -> SystemSet {
 }
 
 fn deselect_target(
-    mut commands: Commands,
     keys: Res<Input<KeyCode>>,
-    current_target: Query<Entity, With<PlayerTarget>>,
+    mut player_query: Query<&mut Target, With<PlayerMarker>>,
 ) {
     if keys.just_pressed(KeyCode::Escape) {
-        if !current_target.is_empty() {
-            let entity = current_target.get_single().unwrap();
-            commands.entity(entity).remove::<PlayerTarget>();
-        }
+        let mut player_target = player_query.get_single_mut().expect("Cannot find player");
+        (*player_target).targeted_entity = None;
     }
 }
 
 fn chose_target(
-    mut commands: Commands,
-    mut current_target: Query<Entity, With<PlayerTarget>>,
+    targetable_query: Query<Entity, With<Targetable>>,
+    mut player_query: Query<&mut Target, With<PlayerMarker>>,
     mut events: EventReader<PickingEvent>,
 ) {
     for event in events.iter() {
         match event {
             PickingEvent::Clicked(e) => {
-                for selected_target in current_target.iter_mut() {
-                    commands.entity(selected_target).remove::<PlayerTarget>();
+                let mut player_target = player_query.get_single_mut().expect("Cannot find player");
+                (*player_target).targeted_entity = if let Ok(target) = targetable_query.get(*e) {
+                    Some(target)
+                } else {
+                    None
                 }
-                commands.entity(*e).insert(PlayerTarget);
             }
             _ => {}
         }

@@ -1,6 +1,7 @@
 use crate::actor::player::camera::PlayerCameraMarker;
+use crate::actor::player::PlayerMarker;
 use crate::actor::status::Stats;
-use crate::actor::target::PlayerTarget;
+use crate::actor::target::{Target, Targetable};
 use bevy::app::App;
 use bevy::prelude::*;
 
@@ -60,16 +61,31 @@ fn instantiate(commands: &mut Commands, stats: &Stats, position: &Vec2) {
 fn refresh(
     mut commands: Commands,
     ui_query: Query<Entity, With<TargetTrackerUIMarker>>,
-    stat_query: Query<(&GlobalTransform, &Stats, ChangeTrackers<Stats>), With<PlayerTarget>>,
+    stat_query: Query<(
+        &GlobalTransform,
+        ChangeTrackers<GlobalTransform>,
+        &Stats,
+        ChangeTrackers<Stats>,
+    )>,
+    target_query: Query<&Target, With<PlayerMarker>>,
     camera_query: Query<
         (&Camera, &GlobalTransform, ChangeTrackers<GlobalTransform>),
         With<PlayerCameraMarker>,
     >,
 ) {
     for ui in ui_query.iter() {
-        for (camera, camera_transform, camera_transform_tracker) in camera_query.iter() {
-            for (transform, stat_instance, stat_tracker) in stat_query.iter() {
-                if stat_tracker.is_changed() || camera_transform_tracker.is_changed() {
+        if let Some(target) = target_query
+            .get_single()
+            .expect("Cannot find player")
+            .targeted_entity
+        {
+            for (camera, camera_transform, camera_transform_tracker) in camera_query.iter() {
+                let (transform, transform_tracker, stat_instance, stat_tracker) =
+                    stat_query.get(target).expect("Cannot find target");
+                if transform_tracker.is_changed()
+                    || stat_tracker.is_changed()
+                    || camera_transform_tracker.is_changed()
+                {
                     let ui_pos =
                         camera.world_to_viewport(camera_transform, transform.translation());
                     match ui_pos {
@@ -86,16 +102,20 @@ fn refresh(
 }
 fn on_target_selected(
     mut commands: Commands,
-    target: Query<(&GlobalTransform, &Stats), Changed<PlayerTarget>>,
+    targetable_query: Query<(&GlobalTransform, &Stats), With<Targetable>>,
+    player_query: Query<&Target, (Changed<Target>, With<PlayerMarker>)>,
     camera_query: Query<(&Camera, &GlobalTransform), With<PlayerCameraMarker>>,
 ) {
-    if !target.is_empty() {
-        let (target_transform, target_stats) = target.get_single().unwrap();
-        let (camera, camera_transform) = camera_query.get_single().unwrap();
-        let ui_pos = camera.world_to_viewport(camera_transform, target_transform.translation());
-        match ui_pos {
-            Some(pos) => instantiate(&mut commands, target_stats, &pos),
-            _ => {}
+    if !player_query.is_empty() {
+        let player_target = player_query.get_single().expect("Cannot find player");
+        if let Some(target) = player_target.targeted_entity {
+            let (target_transform, target_stats) = targetable_query.get(target).unwrap();
+            let (camera, camera_transform) = camera_query.get_single().unwrap();
+            let ui_pos = camera.world_to_viewport(camera_transform, target_transform.translation());
+            match ui_pos {
+                Some(pos) => instantiate(&mut commands, target_stats, &pos),
+                _ => {}
+            }
         }
     }
 }
@@ -103,9 +123,9 @@ fn on_target_selected(
 fn on_target_deselected(
     mut commands: Commands,
     old_ui: Query<Entity, With<TargetTrackerUIMarker>>,
-    removed_targets: RemovedComponents<PlayerTarget>,
+    changed_targets: Query<&Target, Changed<Target>>,
 ) {
-    for _ in removed_targets.iter() {
+    for _ in changed_targets.iter() {
         for ui in old_ui.iter() {
             commands.entity(ui).despawn_recursive();
         }
