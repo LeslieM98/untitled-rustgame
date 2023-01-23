@@ -31,6 +31,12 @@ impl Stats {
     pub const BASE_MOVEMENT_SPEED: StatType = 1000;
     pub const BASE_VELOCITY: StatFloatType = 3.0;
 
+    pub fn empty() -> Stats {
+        Stats {
+            additional_stats: Default::default(),
+        }
+    }
+
     pub fn get_stat(&self, key: &'static str) -> StatType {
         if self.additional_stats.contains_key(key) {
             *self
@@ -58,7 +64,7 @@ impl Stats {
     }
 
     pub fn set_current_hp(&mut self, val: StatType) {
-        *self.additional_stats.get_mut(Self::CURR_HP).unwrap() = val;
+        self.additional_stats.insert(Self::CURR_HP, val);
     }
 
     pub fn get_hp_percentage(&self) -> f32 {
@@ -69,5 +75,17 @@ impl Stats {
         (self.get_stat(Self::MOVEMENT_SPEED_MODIFIER) + Self::BASE_MOVEMENT_SPEED) as StatFloatType
             / Self::BASE_MOVEMENT_SPEED as StatFloatType
             * Self::BASE_VELOCITY
+    }
+
+    pub fn apply_delta(&mut self, delta: &Stats) {
+        for (key, value) in delta.additional_stats.iter() {
+            let result = self.additional_stats.get_mut(key);
+            match result {
+                Some(old_value) => *old_value += value,
+                None => {
+                    self.additional_stats.insert(key, *value);
+                }
+            };
+        }
     }
 }

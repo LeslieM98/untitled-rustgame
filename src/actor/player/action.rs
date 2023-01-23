@@ -1,3 +1,4 @@
+use crate::abilities::aimed_shot;
 use crate::actor::player::PlayerMarker;
 use crate::actor::target::Target;
 use crate::settings::controls::ActionBarAction;
@@ -28,10 +29,9 @@ fn player_action(
 
                 target_event_queue.events.push(HealthEvent {
                     target_association: TargetAssociation::new(player_entity, target_entity),
-                    apply: Box::new(|_source_stats, target_stats| {
-                        target_stats.set_current_hp(target_stats.get_current_hp() - 10)
-                    }),
+                    apply: aimed_shot,
                 });
+                info!("HealthEvent created");
             }
         }
     }

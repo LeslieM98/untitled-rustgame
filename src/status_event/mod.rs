@@ -18,6 +18,7 @@ impl Plugin for StatusEventPlugin {
     }
 }
 
+#[derive(Copy, Clone)]
 pub struct TargetAssociation {
     pub source: Entity,
     pub target: Entity,
