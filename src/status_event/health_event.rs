@@ -1,6 +1,7 @@
 use crate::actor::status::Stats;
 use crate::status_event::TargetAssociation;
 use bevy::prelude::{Commands, Component, Entity, Query, SystemSet, With};
+use std::fmt::{write, Debug, Formatter};
 
 pub fn get_system_set() -> SystemSet {
     SystemSet::new().with_system(resolve_health_events)
@@ -11,10 +12,17 @@ pub struct HealthEventQueue {
     pub events: Vec<HealthEvent>,
 }
 
+#[derive(Clone, Copy)]
 pub struct HealthEvent {
     pub target_association: TargetAssociation,
     ///First stat struct is the source, second is the target
     pub apply: fn(&Stats, &Stats) -> Stats,
+}
+
+impl Debug for HealthEvent {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "HealthEvent({:?})", self.target_association)
+    }
 }
 
 pub fn resolve_health_events(
