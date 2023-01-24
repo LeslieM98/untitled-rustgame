@@ -2,7 +2,7 @@ use crate::abilities::{aimed_shot, poison_arrow_tick};
 use crate::actor::player::PlayerMarker;
 use crate::actor::target::Target;
 use crate::settings::controls::ActionBarAction;
-use crate::status_event::health_event::{HealthEventQueue, ImmediateStatEvent};
+use crate::status_event::immediate_stat_event::{HealthEventQueue, ImmediateStatEvent};
 use crate::status_event::ticking_stat_event::{
     TickDuration, TickingStatEvent, TickingStatEventQueue,
 };

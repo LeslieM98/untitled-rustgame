@@ -1,5 +1,5 @@
 use crate::actor::status::Stats;
-use crate::status_event::health_event::{HealthEventQueue, ImmediateStatEvent};
+use crate::status_event::immediate_stat_event::{HealthEventQueue, ImmediateStatEvent};
 use bevy::prelude::*;
 
 pub type TickType = u32;
