@@ -2,7 +2,7 @@ use crate::abilities::{aimed_shot, poison_arrow_tick};
 use crate::actor::player::PlayerMarker;
 use crate::actor::target::Target;
 use crate::settings::controls::ActionBarAction;
-use crate::status_event::health_event::{HealthEvent, HealthEventQueue};
+use crate::status_event::health_event::{HealthEventQueue, ImmediateStatEvent};
 use crate::status_event::ticking_stat_event::{
     TickDuration, TickingStatEvent, TickingStatEventQueue,
 };
@@ -30,7 +30,7 @@ fn player_action(
                     .get_mut(target_entity)
                     .expect("Target does not exist");
 
-                target_event_queue.events.push(HealthEvent {
+                target_event_queue.events.push(ImmediateStatEvent {
                     target_association: TargetAssociation::new(player_entity, target_entity),
                     apply: aimed_shot,
                 });
@@ -44,7 +44,7 @@ fn player_action(
                 target_event_queue.push(TickingStatEvent::new(
                     TickDuration::Finite(60),
                     6,
-                    HealthEvent {
+                    ImmediateStatEvent {
                         target_association: TargetAssociation::new(player_entity, target_entity),
                         apply: poison_arrow_tick,
                     },

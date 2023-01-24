@@ -4,28 +4,28 @@ use bevy::prelude::{Commands, Component, Entity, Query, SystemSet, With};
 use std::fmt::{write, Debug, Formatter};
 
 pub fn get_system_set() -> SystemSet {
-    SystemSet::new().with_system(resolve_health_events)
+    SystemSet::new().with_system(resolve_immediate_stat_events)
 }
 
 #[derive(Component, Default)]
 pub struct HealthEventQueue {
-    pub events: Vec<HealthEvent>,
+    pub events: Vec<ImmediateStatEvent>,
 }
 
 #[derive(Clone, Copy)]
-pub struct HealthEvent {
+pub struct ImmediateStatEvent {
     pub target_association: TargetAssociation,
     ///First stat struct is the source, second is the target
     pub apply: fn(&Stats, &Stats) -> Stats,
 }
 
-impl Debug for HealthEvent {
+impl Debug for ImmediateStatEvent {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "HealthEvent({:?})", self.target_association)
+        write!(f, "ImmediateStatEvent({:?})", self.target_association)
     }
 }
 
-pub fn resolve_health_events(
+pub fn resolve_immediate_stat_events(
     affected_query: Query<(Entity, &HealthEventQueue)>,
     mut stats_query: Query<&mut Stats>,
     mut commands: Commands,

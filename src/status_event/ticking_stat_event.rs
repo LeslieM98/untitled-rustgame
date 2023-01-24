@@ -1,5 +1,5 @@
 use crate::actor::status::Stats;
-use crate::status_event::health_event::{HealthEvent, HealthEventQueue};
+use crate::status_event::health_event::{HealthEventQueue, ImmediateStatEvent};
 use bevy::prelude::*;
 
 pub type TickType = u32;
@@ -20,11 +20,11 @@ pub struct TickingStatEvent {
     tick_duration: TickDuration,
     current_tick: TickType,
     tick_trigger_interval: TickType,
-    applicable: HealthEvent,
+    applicable: ImmediateStatEvent,
     marked_for_removal: bool,
 }
 impl TickingStatEvent {
-    pub fn tick(&mut self) -> Option<&HealthEvent> {
+    pub fn tick(&mut self) -> Option<&ImmediateStatEvent> {
         self.current_tick += 1;
         match &self.tick_duration {
             TickDuration::Infinite => {
@@ -50,7 +50,7 @@ impl TickingStatEvent {
     pub fn new(
         tick_duration: TickDuration,
         tick_trigger_interval: TickType,
-        applicable: HealthEvent,
+        applicable: ImmediateStatEvent,
     ) -> TickingStatEvent {
         TickingStatEvent {
             tick_duration,
