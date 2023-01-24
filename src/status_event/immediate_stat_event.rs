@@ -1,4 +1,4 @@
-use crate::actor::status::Stats;
+use crate::status_event::Stats::*;
 use crate::status_event::TargetAssociation;
 use bevy::prelude::{Commands, Component, Entity, Query, SystemSet, With};
 use std::fmt::{write, Debug, Formatter};

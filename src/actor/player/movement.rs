@@ -1,6 +1,6 @@
 use crate::actor::player::PlayerMarker;
-use crate::actor::status::Stats;
 use crate::settings::controls::MovementAction;
+use crate::status_event::Stats::*;
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::ActionState;
 

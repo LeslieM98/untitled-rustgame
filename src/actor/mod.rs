@@ -1,14 +1,12 @@
 pub mod npc;
 pub mod player;
-pub mod status;
 pub mod target;
 
-use std::time::SystemTime;
-
-use crate::actor::status::Stats;
 use crate::actor::target::{Target, Targetable};
+use crate::status_event::Stats::*;
 use bevy::prelude::*;
 use bevy_mod_picking::PickableBundle;
+use std::time::SystemTime;
 
 #[derive(Component)]
 pub enum CombatStatus {

@@ -1,6 +1,6 @@
 use crate::actor::npc::NPCMarker;
 use crate::actor::player::PlayerMarker;
-use crate::actor::status::Stats;
+use crate::status_event::Stats::*;
 use bevy::prelude::*;
 
 pub struct AIPlugin;

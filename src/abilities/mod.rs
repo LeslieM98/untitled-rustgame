@@ -1,4 +1,4 @@
-use crate::actor::status::Stats;
+use crate::status_event::Stats::*;
 
 pub fn aimed_shot(_source: &Stats, _target: &Stats) -> Stats {
     let mut modification = Stats::empty();

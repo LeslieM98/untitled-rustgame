@@ -1,7 +1,7 @@
 use crate::actor::player::camera::PlayerCameraMarker;
 use crate::actor::player::PlayerMarker;
-use crate::actor::status::Stats;
 use crate::actor::target::{Target, Targetable};
+use crate::status_event::Stats::*;
 use bevy::app::App;
 use bevy::prelude::*;
 

@@ -1,3 +1,4 @@
+pub mod Stats;
 pub mod immediate_stat_event;
 pub mod ticking_stat_event;
 
