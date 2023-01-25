@@ -1,6 +1,5 @@
-use crate::status_event::Stats::*;
+use crate::status_event::stats::*;
 use crate::status_event::TargetAssociation;
-use bevy::log::info;
 use bevy::prelude::{Commands, Component, Entity, Query, SystemSet, With};
 use std::fmt::{Debug, Formatter};
 
@@ -9,7 +8,7 @@ pub fn get_system_set() -> SystemSet {
 }
 
 #[derive(Component, Default)]
-pub struct HealthEventQueue {
+pub struct ImmediateStatEventQueue {
     pub events: Vec<ImmediateStatEvent>,
 }
 
@@ -27,7 +26,7 @@ impl Debug for ImmediateStatEvent {
 }
 
 pub fn resolve_immediate_stat_events(
-    affected_query: Query<(Entity, &HealthEventQueue)>,
+    affected_query: Query<(Entity, &ImmediateStatEventQueue)>,
     mut stats_query: Query<&mut Stats>,
     mut commands: Commands,
 ) {
@@ -45,12 +44,8 @@ pub fn resolve_immediate_stat_events(
             );
             (event.apply)(&source_stats, &mut target_stats);
         }
-        commands.entity(entity).insert(HealthEventQueue::default());
-    }
-}
-
-pub fn init(mut commands: Commands, health_queries: Query<Entity, With<Stats>>) {
-    for entity in &health_queries {
-        commands.entity(entity).insert(HealthEventQueue::default());
+        commands
+            .entity(entity)
+            .insert(ImmediateStatEventQueue::default());
     }
 }

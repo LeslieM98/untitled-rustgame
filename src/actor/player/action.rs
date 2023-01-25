@@ -2,7 +2,7 @@ use crate::abilities::{aimed_shot, poison_arrow_tick};
 use crate::actor::player::PlayerMarker;
 use crate::actor::target::Target;
 use crate::settings::controls::ActionBarAction;
-use crate::status_event::immediate_stat_event::{HealthEventQueue, ImmediateStatEvent};
+use crate::status_event::immediate_stat_event::{ImmediateStatEvent, ImmediateStatEventQueue};
 use crate::status_event::ticking_stat_event::{
     TickDuration, TickingStatEvent, TickingStatEventQueue,
 };
@@ -18,7 +18,7 @@ pub fn get_system_set() -> SystemSet {
 
 fn player_action(
     actions: Query<&ActionState<ActionBarAction>>,
-    mut health_event_queues: Query<&mut HealthEventQueue>,
+    mut health_event_queues: Query<&mut ImmediateStatEventQueue>,
     mut ticking_stat_event: Query<&mut TickingStatEventQueue>,
     player_queue: Query<(Entity, &Target), With<PlayerMarker>>,
 ) {

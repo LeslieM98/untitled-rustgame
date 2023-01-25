@@ -1,5 +1,5 @@
-use crate::status_event::immediate_stat_event::{HealthEventQueue, ImmediateStatEvent};
-use crate::status_event::Stats::*;
+use crate::status_event::immediate_stat_event::{ImmediateStatEvent, ImmediateStatEventQueue};
+use crate::status_event::stats::*;
 use bevy::prelude::*;
 
 pub type TickType = u32;
@@ -77,17 +77,9 @@ impl TickingStatEventQueue {
     }
 }
 
-pub fn init(mut commands: Commands, stat_query: Query<Entity, With<Stats>>) {
-    for entity in stat_query.iter() {
-        commands
-            .entity(entity)
-            .insert(TickingStatEventQueue::default());
-    }
-}
-
 pub fn resolve_ticking_events(
     mut event_queue_query: Query<&mut TickingStatEventQueue>,
-    mut stat_event_queue_query: Query<&mut HealthEventQueue>,
+    mut stat_event_queue_query: Query<&mut ImmediateStatEventQueue>,
 ) {
     for mut event_queue in event_queue_query.iter_mut() {
         for event in event_queue.events.iter_mut() {
