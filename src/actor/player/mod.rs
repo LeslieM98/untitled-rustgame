@@ -60,7 +60,7 @@ pub fn spawn_player(
         ..default()
     };
     let mut player_stats = Stats::default();
-    *player_stats.get_stat_mut(Stats::MOVEMENT_SPEED_MODIFIER) = 1000;
+    player_stats.set_stat(Stats::MOVEMENT_SPEED_MODIFIER, 1000);
     let player_bundle = PlayerBundle {
         actor: Actor {
             pbr,

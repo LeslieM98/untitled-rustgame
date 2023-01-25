@@ -91,15 +91,12 @@ pub fn resolve_ticking_events(
 ) {
     for mut event_queue in event_queue_query.iter_mut() {
         for event in event_queue.events.iter_mut() {
-            match event.tick() {
-                Some(stat_event) => {
-                    let target_entity = stat_event.target_association.target;
-                    let mut target_stat_queue = stat_event_queue_query
-                        .get_mut(target_entity)
-                        .expect(format!("Cannot find Target: {:?}", target_entity).as_str());
-                    target_stat_queue.events.push(*stat_event);
-                }
-                _ => {}
+            if let Some(stat_event) = event.tick() {
+                let target_entity = stat_event.target_association.target;
+                let mut target_stat_queue = stat_event_queue_query
+                    .get_mut(target_entity)
+                    .expect(format!("Cannot find Target: {:?}", target_entity).as_str());
+                target_stat_queue.events.push(*stat_event);
             };
         }
     }

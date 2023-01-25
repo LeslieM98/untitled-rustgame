@@ -4,7 +4,28 @@ use bevy::utils::HashMap;
 type StatType = i32;
 type StatFloatType = f32;
 
-#[derive(Component, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum DamageType {
+    Physical,
+    Poison,
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct Damage {
+    damage_type: DamageType,
+    amount: StatType,
+}
+
+impl Damage {
+    pub fn new(damage_type: DamageType, amount: StatType) -> Self {
+        Self {
+            damage_type,
+            amount,
+        }
+    }
+}
+
+#[derive(Component, Clone, Debug)]
 pub struct Stats {
     pub additional_stats: HashMap<&'static str, StatType>,
 }
@@ -38,21 +59,14 @@ impl Stats {
     }
 
     pub fn get_stat(&self, key: &'static str) -> StatType {
-        if self.additional_stats.contains_key(key) {
-            *self
-                .additional_stats
-                .get(key)
-                .unwrap_or_else(|| panic!("Error getting stat '{}'", key))
-        } else {
-            StatType::default()
-        }
+        *self
+            .additional_stats
+            .get(key)
+            .unwrap_or_else(|| panic!("Error getting stat '{}'", key))
     }
 
-    pub fn get_stat_mut(&mut self, key: &'static str) -> &mut StatType {
-        if !self.additional_stats.contains_key(key) {
-            self.additional_stats.insert(key, StatType::default());
-        }
-        self.additional_stats.get_mut(key).unwrap()
+    pub fn set_stat(&mut self, key: &'static str, value: StatType) -> Option<StatType> {
+        self.additional_stats.insert(key, value)
     }
 
     pub fn get_max_hp(&self) -> StatType {
@@ -61,10 +75,6 @@ impl Stats {
 
     pub fn get_current_hp(&self) -> StatType {
         self.get_stat(Self::CURR_HP)
-    }
-
-    pub fn set_current_hp(&mut self, val: StatType) {
-        self.additional_stats.insert(Self::CURR_HP, val);
     }
 
     pub fn get_hp_percentage(&self) -> f32 {
@@ -77,15 +87,18 @@ impl Stats {
             * Self::BASE_VELOCITY
     }
 
-    pub fn apply_delta(&mut self, delta: &Stats) {
-        for (key, value) in delta.additional_stats.iter() {
-            let result = self.additional_stats.get_mut(key);
-            match result {
-                Some(old_value) => *old_value += value,
-                None => {
-                    self.additional_stats.insert(key, *value);
-                }
-            };
+    /// Applies the damage and returns the over damage.
+    pub fn apply_damage(&mut self, damage: &Damage) -> Option<Damage> {
+        let curr_hp = self.get_stat(Self::CURR_HP);
+        if damage.amount > curr_hp {
+            info!("A Changed HP: {:?}", curr_hp);
+            let over_damage = Damage::new(damage.damage_type, damage.amount - curr_hp);
+            self.set_stat(Self::CURR_HP, 0);
+            Some(over_damage)
+        } else {
+            self.set_stat(Self::CURR_HP, curr_hp - damage.amount);
+            info!("B Changed HP: {:?}", self.get_current_hp());
+            None
         }
     }
 }
