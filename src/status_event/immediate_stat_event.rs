@@ -43,7 +43,6 @@ pub fn resolve_immediate_stat_events(
             let mut target_stats = stats_query.get_mut(event.target_association.target).expect(
                 format!("Cannot find target: {:?}", event.target_association.target).as_str(),
             );
-            info!("{:?}", target_stats);
             (event.apply)(&source_stats, &mut target_stats);
         }
         commands.entity(entity).insert(HealthEventQueue::default());

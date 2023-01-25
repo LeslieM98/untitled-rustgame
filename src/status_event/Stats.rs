@@ -91,13 +91,11 @@ impl Stats {
     pub fn apply_damage(&mut self, damage: &Damage) -> Option<Damage> {
         let curr_hp = self.get_stat(Self::CURR_HP);
         if damage.amount > curr_hp {
-            info!("A Changed HP: {:?}", curr_hp);
             let over_damage = Damage::new(damage.damage_type, damage.amount - curr_hp);
             self.set_stat(Self::CURR_HP, 0);
             Some(over_damage)
         } else {
             self.set_stat(Self::CURR_HP, curr_hp - damage.amount);
-            info!("B Changed HP: {:?}", self.get_current_hp());
             None
         }
     }
