@@ -13,6 +13,7 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(spawn_player)
+            .add_system(animation)
             .add_system_set(movement::get_system_set())
             .add_system_set(camera::get_system_set())
             .add_system_set(targeting::get_system_set())
@@ -40,36 +41,40 @@ impl Default for PlayerBundle {
     }
 }
 
-pub fn spawn_player(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    let tex_handle = asset_server.load("PNG/Green/texture_04.png");
-    let material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(tex_handle),
-        unlit: false,
-        ..default()
-    });
-
-    let pbr = PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Capsule::default())),
-        material: material_handle,
-        transform: Transform::from_xyz(0.0, 1.0, -10.0),
-        ..default()
-    };
+pub fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
     let mut player_stats = Stats::default();
     player_stats.set_stat(Stats::MOVEMENT_SPEED_MODIFIER, 1000);
     let player_bundle = PlayerBundle {
         actor: Actor {
-            pbr,
             stats: player_stats,
             ..default()
         },
         ..default()
     };
 
+    let player_scene = SceneBundle {
+        scene: asset_server.load("glTF/base model/base_model.gltf#Scene0"),
+        ..default()
+    };
+
     let camera_entity = camera::spawn(&mut commands);
-    commands.spawn(player_bundle).add_child(camera_entity);
+    commands
+        .spawn(player_bundle)
+        .insert(player_scene)
+        .add_child(camera_entity);
+}
+
+pub fn animation(
+    asset_server: Res<AssetServer>,
+    mut anim_player_query: Query<&mut AnimationPlayer>,
+    mut already_started: Local<bool>,
+) {
+    if !(*already_started) {
+        let animation = asset_server.load("glTF/base model/base_model.gltf#Animation1");
+        for mut anim_player in &mut anim_player_query {
+            info!("Anim started");
+            anim_player.play(animation.clone_weak()).repeat();
+            *already_started = true;
+        }
+    }
 }
