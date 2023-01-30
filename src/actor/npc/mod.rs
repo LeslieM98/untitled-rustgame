@@ -3,7 +3,6 @@ mod ai;
 use crate::actor::npc::ai::AIPlugin;
 use crate::actor::Actor;
 use bevy::prelude::*;
-use bevy_mod_picking::PickableBundle;
 
 pub struct EnemyPlugin;
 

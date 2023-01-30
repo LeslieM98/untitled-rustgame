@@ -21,7 +21,7 @@ fn main() {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
         window: WindowDescriptor {
-            title: "Untiteled Game".to_string(),
+            title: "Untitled Game".to_string(),
             present_mode: PresentMode::Immediate,
             ..default()
         },

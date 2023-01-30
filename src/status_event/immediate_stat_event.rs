@@ -1,6 +1,6 @@
 use crate::status_event::stats::*;
 use crate::status_event::TargetAssociation;
-use bevy::prelude::{Commands, Component, Entity, Query, SystemSet, With};
+use bevy::prelude::{Commands, Component, Entity, Query, SystemSet};
 use std::fmt::{Debug, Formatter};
 
 pub fn get_system_set() -> SystemSet {
@@ -34,14 +34,16 @@ pub fn resolve_immediate_stat_events(
         for event in event_queues.events.iter() {
             let source_stats = stats_query
                 .get(event.target_association.source)
-                .expect(
-                    format!("Cannot find source: {:?}", event.target_association.source).as_str(),
-                )
+                .unwrap_or_else(|_| {
+                    panic!("Cannot find source: {:?}", event.target_association.source)
+                })
                 .clone();
 
-            let mut target_stats = stats_query.get_mut(event.target_association.target).expect(
-                format!("Cannot find target: {:?}", event.target_association.target).as_str(),
-            );
+            let mut target_stats = stats_query
+                .get_mut(event.target_association.target)
+                .unwrap_or_else(|_| {
+                    panic!("Cannot find target: {:?}", event.target_association.target)
+                });
             (event.apply)(&source_stats, &mut target_stats);
         }
         commands

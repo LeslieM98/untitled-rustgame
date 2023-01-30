@@ -25,7 +25,7 @@ fn camera_debug_render(
 ) {
     let tex_handle = asset_server.load("PNG/Red/texture_10.png");
     let material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(tex_handle.clone()),
+        base_color_texture: Some(tex_handle),
         alpha_mode: AlphaMode::Blend,
         unlit: false,
         ..default()

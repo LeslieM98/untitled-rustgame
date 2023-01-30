@@ -1,6 +1,5 @@
 use crate::status_event::stats::DamageType::Physical;
 use crate::status_event::stats::*;
-use bevy::prelude::info;
 
 pub fn aimed_shot(_source: &Stats, _target: &mut Stats) {
     _target.apply_damage(&Damage::new(Physical, 10));

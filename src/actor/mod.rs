@@ -3,7 +3,7 @@ pub mod player;
 pub mod target;
 
 use crate::actor::target::{Target, Targetable};
-use crate::status_event::immediate_stat_event::{ImmediateStatEvent, ImmediateStatEventQueue};
+use crate::status_event::immediate_stat_event::ImmediateStatEventQueue;
 use crate::status_event::stats::*;
 use crate::status_event::ticking_stat_event::TickingStatEventQueue;
 use bevy::prelude::*;

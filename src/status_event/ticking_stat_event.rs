@@ -1,5 +1,4 @@
 use crate::status_event::immediate_stat_event::{ImmediateStatEvent, ImmediateStatEventQueue};
-use crate::status_event::stats::*;
 use bevy::prelude::*;
 
 pub type TickType = u32;
@@ -87,7 +86,7 @@ pub fn resolve_ticking_events(
                 let target_entity = stat_event.target_association.target;
                 let mut target_stat_queue = stat_event_queue_query
                     .get_mut(target_entity)
-                    .expect(format!("Cannot find Target: {:?}", target_entity).as_str());
+                    .unwrap_or_else(|_| panic!("Cannot find Target: {target_entity:?}"));
                 target_stat_queue.events.push(*stat_event);
             };
         }

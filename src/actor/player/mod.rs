@@ -48,7 +48,7 @@ pub fn spawn_player(
 ) {
     let tex_handle = asset_server.load("PNG/Green/texture_04.png");
     let material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(tex_handle.clone()),
+        base_color_texture: Some(tex_handle),
         unlit: false,
         ..default()
     });

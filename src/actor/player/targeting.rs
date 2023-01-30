@@ -16,7 +16,7 @@ fn deselect_target(
 ) {
     if keys.just_pressed(KeyCode::Escape) {
         let mut player_target = player_query.get_single_mut().expect("Cannot find player");
-        (*player_target).targeted_entity = None;
+        player_target.targeted_entity = None;
     }
 }
 
@@ -26,16 +26,13 @@ fn chose_target(
     mut events: EventReader<PickingEvent>,
 ) {
     for event in events.iter() {
-        match event {
-            PickingEvent::Clicked(e) => {
-                let mut player_target = player_query.get_single_mut().expect("Cannot find player");
-                (*player_target).targeted_entity = if let Ok(target) = targetable_query.get(*e) {
-                    Some(target)
-                } else {
-                    None
-                }
+        if let PickingEvent::Clicked(e) = event {
+            let mut player_target = player_query.get_single_mut().expect("Cannot find player");
+            player_target.targeted_entity = if let Ok(target) = targetable_query.get(*e) {
+                Some(target)
+            } else {
+                None
             }
-            _ => {}
         }
     }
 }

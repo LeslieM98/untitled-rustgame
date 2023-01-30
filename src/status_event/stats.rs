@@ -62,7 +62,7 @@ impl Stats {
         *self
             .additional_stats
             .get(key)
-            .unwrap_or_else(|| panic!("Error getting stat '{}'", key))
+            .unwrap_or_else(|| panic!("Error getting stat '{key}'"))
     }
 
     pub fn set_stat(&mut self, key: &'static str, value: StatType) -> Option<StatType> {
