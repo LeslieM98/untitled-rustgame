@@ -2,11 +2,8 @@ use crate::debug::fps::FPSLabelPlugin;
 use crate::debug::type_registering::TypeRegisterPlugin;
 use bevy::prelude::*;
 
-use self::ui::DebugUI;
-
 mod fps;
 mod type_registering;
-mod ui;
 
 #[derive(StageLabel)]
 pub struct DebugStage;
@@ -19,7 +16,6 @@ impl Plugin for DebugPlugin {
             DebugStage,
             SystemStage::single_threaded(),
         )
-        .add_plugin(DebugUI)
         .add_plugin(FPSLabelPlugin)
         .add_plugin(TypeRegisterPlugin);
     }
