@@ -1,4 +1,5 @@
 use crate::actor::player::camera::PlayerCameraMarker;
+use crate::player_ui::instantiate_health_bar;
 use crate::status_event::stats::*;
 use bevy::app::App;
 use bevy::prelude::*;
@@ -18,41 +19,18 @@ impl Plugin for NamePlateUIPlugin {
 }
 
 fn instantiate(commands: &mut Commands, health_percentage: f32, position: &Vec2) {
-    let width = 100.0;
-    commands
-        .spawn(NodeBundle {
-            style: Style {
-                size: Size::new(Val::Px(width), Val::Px(20.0)),
-                position_type: PositionType::Absolute,
-                position: UiRect {
-                    left: Val::Px(position.x),
-                    bottom: Val::Px(position.y),
-                    ..default()
-                },
-                ..default()
-            },
-            background_color: Color::rgb(0.3, 0.3, 0.3).into(),
-            ..default()
-        })
-        .insert(NamePlateUIMarker)
-        .with_children(|parent| {
-            parent
-                .spawn(NodeBundle {
-                    style: Style {
-                        size: Size::new(Val::Px(width * health_percentage), Val::Px(20.0)),
-                        position_type: PositionType::Relative,
-                        position: UiRect {
-                            left: Val::Px(0.0),
-                            bottom: Val::Px(0.0),
-                            ..default()
-                        },
-                        ..default()
-                    },
-                    background_color: Color::rgb(1.0, 0.3, 0.3).into(),
-                    ..default()
-                })
-                .insert(NamePlateUIHealthBarMarker);
-        });
+    instantiate_health_bar(
+        commands,
+        health_percentage,
+        100.0,
+        20.0,
+        position.x,
+        position.y,
+        NamePlateUIMarker,
+        NamePlateUIHealthBarMarker,
+        Color::rgb(1.0, 0.3, 0.3),
+        Color::rgb(0.3, 0.3, 0.3),
+    )
 }
 
 fn clear_ui(mut commands: Commands, ui_query: Query<Entity, With<NamePlateUIMarker>>) {

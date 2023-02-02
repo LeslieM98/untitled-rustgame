@@ -1,5 +1,6 @@
 use crate::actor::player::PlayerMarker;
 use crate::actor::target::Target;
+use crate::player_ui::instantiate_health_bar;
 use crate::status_event::stats::Stats;
 use bevy::prelude::*;
 
@@ -16,57 +17,6 @@ struct TargetTrackerUIMarker;
 #[derive(Component)]
 struct TargetTrackerUIHealthBarMarker;
 
-fn instantiate<T, U>(
-    commands: &mut Commands,
-    health_percentage: f32,
-    width: f32,
-    height: f32,
-    pos_left: f32,
-    pos_bottom: f32,
-    root_marker: T,
-    current_health_marker: U,
-    health_color: Color,
-    background_color: Color,
-) where
-    T: Component,
-    U: Component,
-{
-    commands
-        .spawn(NodeBundle {
-            style: Style {
-                size: Size::new(Val::Px(width), Val::Px(height)),
-                position_type: PositionType::Absolute,
-                position: UiRect {
-                    left: Val::Px(pos_left),
-                    bottom: Val::Px(pos_bottom),
-                    ..default()
-                },
-                ..default()
-            },
-            background_color: background_color.into(),
-            ..default()
-        })
-        .insert(root_marker)
-        .with_children(|parent| {
-            parent
-                .spawn(NodeBundle {
-                    style: Style {
-                        size: Size::new(Val::Px(width * health_percentage), Val::Px(height)),
-                        position_type: PositionType::Relative,
-                        position: UiRect {
-                            left: Val::Px(0.0),
-                            bottom: Val::Px(0.0),
-                            ..default()
-                        },
-                        ..default()
-                    },
-                    background_color: health_color.into(),
-                    ..default()
-                })
-                .insert(current_health_marker);
-        });
-}
-
 fn draw(
     mut commands: Commands,
     stats_query: Query<&Stats>,
@@ -81,7 +31,8 @@ fn draw(
                 .get(target)
                 .expect("Cannot find target")
                 .get_hp_percentage();
-            instantiate(
+
+            instantiate_health_bar(
                 &mut commands,
                 health_percentage,
                 100.0,
