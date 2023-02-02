@@ -13,54 +13,105 @@ impl Plugin for PlayerUi {
             .add_plugin(TargetTrackerUIPlugin);
     }
 }
+mod widgets {
+    use bevy::prelude::*;
 
-pub fn instantiate_health_bar<T, U>(
-    commands: &mut Commands,
-    health_percentage: f32,
-    width: f32,
-    height: f32,
-    pos_left: f32,
-    pos_bottom: f32,
-    root_marker: T,
-    current_health_marker: U,
-    health_color: Color,
-    background_color: Color,
-) where
-    T: Component,
-    U: Component,
-{
-    commands
-        .spawn(NodeBundle {
-            style: Style {
-                size: Size::new(Val::Px(width), Val::Px(height)),
-                position_type: PositionType::Absolute,
-                position: UiRect {
-                    left: Val::Px(pos_left),
-                    bottom: Val::Px(pos_bottom),
-                    ..default()
-                },
-                ..default()
-            },
-            background_color: background_color.into(),
-            ..default()
-        })
-        .insert(root_marker)
-        .with_children(|parent| {
-            parent
+    pub struct HealthBar<T, U>
+    where
+        T: Component + Clone,
+        U: Component + Clone,
+    {
+        width: f32,
+        height: f32,
+        pos_left: f32,
+        pos_bottom: f32,
+        root_marker: T,
+        current_health_marker: U,
+        health_color: Color,
+        background_color: Color,
+    }
+
+    impl<T, U> HealthBar<T, U>
+    where
+        T: Component + Clone,
+        U: Component + Clone,
+    {
+        pub fn with_width(self, width: f32) -> Self {
+            Self { width, ..self }
+        }
+        pub fn with_height(self, height: f32) -> Self {
+            Self { height, ..self }
+        }
+        pub fn with_pos_left(self, pos_left: f32) -> Self {
+            Self { pos_left, ..self }
+        }
+        pub fn with_pos_bottom(self, pos_bottom: f32) -> Self {
+            Self { pos_bottom, ..self }
+        }
+        pub fn with_health_color(self, health_color: Color) -> Self {
+            Self {
+                health_color,
+                ..self
+            }
+        }
+        pub fn with_background_color(self, background_color: Color) -> Self {
+            Self {
+                background_color,
+                ..self
+            }
+        }
+
+        pub fn new(root_marker: T, current_health_marker: U) -> Self {
+            Self {
+                root_marker,
+                current_health_marker,
+                width: 100.0,
+                height: 20.0,
+                pos_left: 20.0,
+                pos_bottom: 20.0,
+                health_color: Color::rgb(1.0, 0.3, 0.3),
+                background_color: Color::rgb(0.3, 0.3, 0.3),
+            }
+        }
+
+        pub fn draw(&self, commands: &mut Commands, health_percentage: f32) {
+            commands
                 .spawn(NodeBundle {
                     style: Style {
-                        size: Size::new(Val::Px(width * health_percentage), Val::Px(height)),
-                        position_type: PositionType::Relative,
+                        size: Size::new(Val::Px(self.width), Val::Px(self.height)),
+                        position_type: PositionType::Absolute,
                         position: UiRect {
-                            left: Val::Px(0.0),
-                            bottom: Val::Px(0.0),
+                            left: Val::Px(self.pos_left),
+                            bottom: Val::Px(self.pos_bottom),
                             ..default()
                         },
                         ..default()
                     },
-                    background_color: health_color.into(),
+                    background_color: self.background_color.into(),
                     ..default()
                 })
-                .insert(current_health_marker);
-        });
+                .insert(self.root_marker.clone())
+                .with_children(|parent| {
+                    parent
+                        .spawn(NodeBundle {
+                            style: Style {
+                                size: Size::new(
+                                    Val::Px(self.width * health_percentage),
+                                    Val::Px(self.height),
+                                ),
+                                position_type: PositionType::Relative,
+                                position: UiRect {
+                                    left: Val::Px(0.0),
+                                    bottom: Val::Px(0.0),
+                                    ..default()
+                                },
+                                ..default()
+                            },
+                            background_color: self.health_color.into(),
+                            ..default()
+                        })
+                        .insert(self.current_health_marker.clone());
+                });
+        }
+    }
 }

@@ -1,14 +1,14 @@
 use crate::actor::player::camera::PlayerCameraMarker;
-use crate::player_ui::instantiate_health_bar;
+use crate::player_ui::widgets::HealthBar;
 use crate::status_event::stats::*;
 use bevy::app::App;
 use bevy::prelude::*;
 
 pub struct NamePlateUIPlugin;
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct NamePlateUIMarker;
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct NamePlateUIHealthBarMarker;
 
 impl Plugin for NamePlateUIPlugin {
@@ -19,18 +19,14 @@ impl Plugin for NamePlateUIPlugin {
 }
 
 fn instantiate(commands: &mut Commands, health_percentage: f32, position: &Vec2) {
-    instantiate_health_bar(
-        commands,
-        health_percentage,
-        100.0,
-        20.0,
-        position.x,
-        position.y,
-        NamePlateUIMarker,
-        NamePlateUIHealthBarMarker,
-        Color::rgb(1.0, 0.3, 0.3),
-        Color::rgb(0.3, 0.3, 0.3),
-    )
+    HealthBar::new(NamePlateUIMarker, NamePlateUIHealthBarMarker)
+        .with_width(100.0)
+        .with_height(20.0)
+        .with_pos_left(position.x)
+        .with_pos_bottom(position.y)
+        .with_background_color(Color::rgb(0.3, 0.3, 0.3))
+        .with_health_color(Color::rgb(1.0, 0.3, 0.3))
+        .draw(commands, health_percentage);
 }
 
 fn clear_ui(mut commands: Commands, ui_query: Query<Entity, With<NamePlateUIMarker>>) {
