@@ -70,11 +70,6 @@ impl Stat {
     pub fn get_combined_base_modifiers(&self) -> StatModifierType {
         self.base_modifiers.iter().map(|(_, v)| v.value).sum()
     }
-    pub fn get_total_modifiers(&self) -> StatModifierType {
-        self.get_combined_absolute_modifiers()
-            + self.get_combined_addition_modifiers()
-            + self.get_combined_base_modifiers()
-    }
 
     pub fn insert_addition(&mut self, addition: StatAddition) {
         self.additions.insert(addition.identifier.clone(), addition);
@@ -239,7 +234,6 @@ mod tests {
         assert_eq!(intelligence.get_combined_base_modifiers(), 0.04);
         assert_eq!(intelligence.get_combined_addition_modifiers(), 0.2);
         assert_eq!(intelligence.get_combined_absolute_modifiers(), 0.1);
-        assert_eq!(intelligence.get_total_modifiers(), 0.34);
 
         assert_eq!(intelligence.calculate_modified_base_value(), 228);
         assert_eq!(intelligence.calculate_modified_additional_value(), 65);
