@@ -1,164 +1,182 @@
+use bevy::utils::HashMap;
+
 pub type StatValueType = i32;
 pub type StatModifierType = f32;
 pub type StatIdentifier = String;
 
-pub trait StatModifier {
-    fn get_identifier(&self) -> &StatIdentifier;
-    fn get_modifier(&self) -> StatModifierType;
+#[derive(Clone, Debug)]
+pub struct StatModifier {
+    pub identifier: StatIdentifier,
+    pub value: StatModifierType,
 }
 
-pub trait StatAddition {
-    fn get_identifier(&self) -> &StatIdentifier;
-    fn get_addition_value(&self) -> StatValueType;
-}
-
-pub trait Stat {
-    fn get_identifier(&self) -> &StatIdentifier;
-
-    fn get_base_value(&self) -> StatValueType;
-
-    fn get_combined_absolute_modifiers(&self) -> StatModifierType;
-    fn get_combined_addition_modifiers(&self) -> StatModifierType;
-    fn get_combined_base_modifiers(&self) -> StatModifierType;
-
-    fn get_combined_additions(&self) -> StatValueType;
-
-    fn calculate_absolute_value(&self) -> StatValueType {
-        let first_step =
-            self.calculate_modified_base_value() + self.calculate_modified_additional_value();
-
-        let applied_absolute_modifiers = (self.get_base_value() + self.get_combined_additions())
-            as StatModifierType
-            * self.get_combined_absolute_modifiers();
-
-        first_step + applied_absolute_modifiers.floor() as StatValueType
+impl StatModifier {
+    pub fn new(identifier: StatIdentifier, value: StatModifierType) -> Self {
+        Self { identifier, value }
     }
-    fn calculate_modified_base_value(&self) -> StatValueType {
+}
+
+#[derive(Clone, Debug)]
+pub struct StatAddition {
+    pub identifier: StatIdentifier,
+    pub value: StatValueType,
+}
+
+impl StatAddition{
+    pub fn new(identifier: StatIdentifier, value: StatValueType) -> Self {
+        Self{identifier, value}
+    }
+}
+
+#[derive(Debug)]
+pub struct Stat {
+    identifier: StatIdentifier,
+    base_value: StatValueType,
+    pub additions: HashMap<StatIdentifier, StatAddition>,
+    pub absolute_modifiers: HashMap<StatIdentifier, StatModifier>,
+    pub base_modifiers: HashMap<StatIdentifier, StatModifier>,
+    pub additional_modifiers: HashMap<StatIdentifier, StatModifier>,
+}
+
+impl Stat {
+    pub fn new(identifier: StatIdentifier, base_value: StatValueType) -> Self {
+        Self {
+            identifier,
+            base_value,
+            additions: HashMap::new(),
+            absolute_modifiers: HashMap::new(),
+            base_modifiers: HashMap::new(),
+            additional_modifiers: HashMap::new(),
+        }
+    }
+
+    pub fn get_identifier(&self) -> &StatIdentifier {
+        &self.identifier
+    }
+
+    pub fn get_base_value(&self) -> StatValueType {
+        self.base_value
+    }
+
+    pub fn get_combined_absolute_modifiers(&self) -> StatModifierType {
+        self.absolute_modifiers
+            .iter()
+            .map(|(_,v)| v.value)
+            .fold(0., |x, y| x+y)
+    }
+    pub fn get_combined_additional_modifiers(&self) -> StatModifierType {
+        self.additional_modifiers
+            .iter()
+            .map(|(_,v)| v.value)
+            .sum()
+    }
+    pub fn get_combined_base_modifiers(&self) -> StatModifierType {
+        self.base_modifiers
+            .iter()
+            .map(|(_,v)| v.value)
+            .sum()
+    }
+
+    pub fn insert_addition(&mut self, addition: StatAddition){
+        self.additions.insert(addition.identifier.clone(), addition);
+    }
+    pub fn insert_absolute_modifier(&mut self, modifier: StatModifier){
+        self.absolute_modifiers.insert(modifier.identifier.clone(), modifier);
+    }
+    pub fn insert_base_modifier(&mut self, modifier: StatModifier){
+        self.base_modifiers.insert(modifier.identifier.clone(), modifier);
+    }
+    pub fn insert_addition_modifier(&mut self, modifier: StatModifier){
+        self.additional_modifiers.insert(modifier.identifier.clone(), modifier);
+    }
+
+    pub fn get_combined_additions(&self) -> StatValueType {
+        self.additions
+            .iter()
+            .map(|(_,v)| v.value)
+            .sum()
+    }
+
+    pub fn calculate_absolute_value(&self) -> StatValueType {
+        let absolute_modifier = self.get_combined_absolute_modifiers();
+        let additional_calculated = (absolute_modifier + self.get_combined_additional_modifiers() + 1.0) * self.get_combined_additions() as StatModifierType;
+        let base_calculated = (absolute_modifier + self.get_combined_base_modifiers() + 1.0) * self.get_base_value() as StatModifierType;
+        (additional_calculated + base_calculated).floor() as StatValueType
+    }
+    pub fn calculate_modified_base_value(&self) -> StatValueType {
         let result = self.get_base_value() as StatModifierType * self.get_combined_base_modifiers();
         result.floor() as StatValueType
     }
-    fn calculate_modified_additional_value(&self) -> StatValueType {
+    pub fn calculate_modified_additional_value(&self) -> StatValueType {
         let result = self.get_combined_additions() as StatModifierType
-            * self.get_combined_addition_modifiers();
+            * self.get_combined_additional_modifiers();
         result.floor() as StatValueType
     }
-
-    fn set_base_value(&mut self, value: StatValueType);
-
-    fn add_stat_addition(&mut self, addition: dyn StatAddition);
-    fn add_stat_modifier(&mut self, addition: dyn StatModifier);
-
-    fn remove_stat_addition(&mut self, identifier: StatIdentifier)
-        -> Option<Box<dyn StatAddition>>;
-    fn remove_stat_modifier(&mut self, identifier: StatIdentifier)
-        -> Option<Box<dyn StatModifier>>;
 }
 
-pub mod default_stats {
-    use crate::stats::*;
 
-    pub struct GenericStatModifier {
-        identifier: StatIdentifier,
-        value: StatModifierType,
-    }
-    impl GenericStatModifier {
-        pub fn new(identifier: StatIdentifier, value: StatModifierType) -> GenericStatModifier {
-            GenericStatModifier { identifier, value }
-        }
-    }
+pub struct StatBlock {
+    stats: HashMap<StatIdentifier, Stat>
+}
 
-    impl StatModifier for GenericStatModifier {
-        fn get_identifier(&self) -> &StatIdentifier {
-            &self.identifier
-        }
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-        fn get_modifier(&self) -> StatModifierType {
-            self.value
-        }
-    }
+    fn big_stat() -> Stat{
+        let mut intelligence = Stat::new(String::from("intelligence"), 200);
 
-    pub struct GenericStatAddition {
-        identifier: StatIdentifier,
-        value: StatValueType,
-    }
+        let head_gear = StatAddition::new(String::from("head_gear"), 10);
+        let chest_gear = StatAddition::new(String::from("chest_gear"), 40);
+        intelligence.insert_addition(head_gear.clone());
+        intelligence.insert_addition(chest_gear.clone());
 
-    impl GenericStatAddition {
-        pub fn new(identifier: StatIdentifier, value: StatValueType) -> GenericStatAddition {
-            Self { identifier, value }
-        }
-    }
+        let int_buff1 = StatModifier::new(String::from("int_buff1"), 0.05);
+        let int_buff2 = StatModifier::new(String::from("int_buff2"), 0.05);
+        intelligence.insert_absolute_modifier(int_buff1);
+        intelligence.insert_absolute_modifier(int_buff2);
 
-    impl StatAddition for GenericStatAddition {
-        fn get_identifier(&self) -> &StatIdentifier {
-            &self.identifier
-        }
+        let armor_buff1 = StatModifier::new(String::from("armor_buff1"), 0.1);
+        let armor_buff2 = StatModifier::new(String::from("armor_buff2"), 0.1);
+        intelligence.insert_addition_modifier(armor_buff1);
+        intelligence.insert_addition_modifier(armor_buff2);
 
-        fn get_addition_value(&self) -> StatValueType {
-            self.value
-        }
+        let racial_buff1 = StatModifier::new(String::from("racial_buff1"), 0.02);
+        let racial_buff2 = StatModifier::new(String::from("racial_buff2"), 0.02);
+        intelligence.insert_addition_modifier(racial_buff1);
+        intelligence.insert_addition_modifier(racial_buff2);
+
+        return intelligence
     }
 
-    pub struct GenericStat {
-        base_value: StatValueType,
-        identifier: StatIdentifier,
-        absolute_modifiers: Vec<Box<dyn StatModifier>>,
+    fn empty_stat() -> Stat {
+        Stat::new(String::from("intelligence"), 200)
     }
 
-    impl GenericStat {
-        pub fn new() -> GenericStat {
-            todo!()
-        }
-    }
+    #[test]
+    fn correct_calc() {
+        let mut intelligence = empty_stat();
 
-    impl Stat for GenericStat {
-        fn get_identifier(&self) -> &StatIdentifier {
-            &self.identifier
-        }
+        assert_eq!(intelligence.get_base_value(), 200);
+        assert_eq!(intelligence.calculate_absolute_value(), intelligence.get_base_value());
 
-        fn get_base_value(&self) -> StatValueType {
-            self.base_value
-        }
+        intelligence.insert_base_modifier(StatModifier::new(String::from("racial_buff"), 0.01));
+        assert_eq!(intelligence.calculate_modified_base_value(), 2);
+        assert_eq!(intelligence.calculate_absolute_value(), 202);
 
-        fn get_combined_absolute_modifiers(&self) -> StatModifierType {
-            todo!()
-        }
+        intelligence = empty_stat();
+        intelligence.insert_addition(StatAddition::new(String::from("head_gear"), 10));
+        assert_eq!(intelligence.calculate_absolute_value(), 210);
+        intelligence.insert_addition_modifier(StatModifier::new(String::from("armor_buff"), 0.1));
+        assert_eq!(intelligence.calculate_absolute_value(), 211);
+        intelligence.insert_addition(StatAddition::new(String::from("chest_gear"), 40));
+        assert_eq!(intelligence.get_combined_additions(), 50);
+        assert_eq!(intelligence.calculate_absolute_value(), 255);
+        assert_eq!(intelligence.calculate_modified_additional_value(), 5);
 
-        fn get_combined_addition_modifiers(&self) -> StatModifierType {
-            todo!()
-        }
+        intelligence.insert_absolute_modifier(StatModifier::new(String::from("int_buff"), 0.05));
+        assert_eq!(intelligence.calculate_modified_base_value(), 12);
+        assert_eq!(intelligence.calculate_absolute_value(), 269);
 
-        fn get_combined_base_modifiers(&self) -> StatModifierType {
-            todo!()
-        }
-
-        fn get_combined_additions(&self) -> StatValueType {
-            todo!()
-        }
-
-        fn set_base_value(&mut self, value: StatValueType) {
-            todo!()
-        }
-
-        fn add_stat_addition(&mut self, addition: dyn StatAddition) {
-            todo!()
-        }
-
-        fn add_stat_modifier(&mut self, addition: dyn StatModifier) {
-            todo!()
-        }
-
-        fn remove_stat_addition(
-            &mut self,
-            identifier: StatIdentifier,
-        ) -> Option<Box<dyn StatAddition>> {
-            todo!()
-        }
-
-        fn remove_stat_modifier(
-            &mut self,
-            identifier: StatIdentifier,
-        ) -> Option<Box<dyn StatModifier>> {
-            todo!()
-        }
     }
 }

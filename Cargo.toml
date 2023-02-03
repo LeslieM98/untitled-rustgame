@@ -6,6 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+stats_and_abilities_system = {path = "crates/stats_and_abilities_system"}
+
 bevy = { version = "0.9", features = ["png"] }
 bevy_editor_pls = "0.2"
 bevy_egui = "0.19"
