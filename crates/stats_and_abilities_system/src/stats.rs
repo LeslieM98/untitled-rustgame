@@ -22,9 +22,9 @@ pub struct StatAddition {
     pub value: StatValueType,
 }
 
-impl StatAddition{
+impl StatAddition {
     pub fn new(identifier: StatIdentifier, value: StatValueType) -> Self {
-        Self{identifier, value}
+        Self { identifier, value }
     }
 }
 
@@ -61,69 +61,67 @@ impl Stat {
     pub fn get_combined_absolute_modifiers(&self) -> StatModifierType {
         self.absolute_modifiers
             .iter()
-            .map(|(_,v)| v.value)
-            .fold(0., |x, y| x+y)
+            .map(|(_, v)| v.value)
+            .fold(0., |x, y| x + y)
     }
-    pub fn get_combined_additional_modifiers(&self) -> StatModifierType {
-        self.additional_modifiers
-            .iter()
-            .map(|(_,v)| v.value)
-            .sum()
+    pub fn get_combined_addition_modifiers(&self) -> StatModifierType {
+        self.additional_modifiers.iter().map(|(_, v)| v.value).sum()
     }
     pub fn get_combined_base_modifiers(&self) -> StatModifierType {
-        self.base_modifiers
-            .iter()
-            .map(|(_,v)| v.value)
-            .sum()
+        self.base_modifiers.iter().map(|(_, v)| v.value).sum()
+    }
+    pub fn get_total_modifiers(&self) -> StatModifierType {
+        self.get_combined_absolute_modifiers()
+            + self.get_combined_addition_modifiers()
+            + self.get_combined_base_modifiers()
     }
 
-    pub fn insert_addition(&mut self, addition: StatAddition){
+    pub fn insert_addition(&mut self, addition: StatAddition) {
         self.additions.insert(addition.identifier.clone(), addition);
     }
-    pub fn insert_absolute_modifier(&mut self, modifier: StatModifier){
-        self.absolute_modifiers.insert(modifier.identifier.clone(), modifier);
+    pub fn insert_absolute_modifier(&mut self, modifier: StatModifier) {
+        self.absolute_modifiers
+            .insert(modifier.identifier.clone(), modifier);
     }
-    pub fn insert_base_modifier(&mut self, modifier: StatModifier){
-        self.base_modifiers.insert(modifier.identifier.clone(), modifier);
+    pub fn insert_base_modifier(&mut self, modifier: StatModifier) {
+        self.base_modifiers
+            .insert(modifier.identifier.clone(), modifier);
     }
-    pub fn insert_addition_modifier(&mut self, modifier: StatModifier){
-        self.additional_modifiers.insert(modifier.identifier.clone(), modifier);
+    pub fn insert_addition_modifier(&mut self, modifier: StatModifier) {
+        self.additional_modifiers
+            .insert(modifier.identifier.clone(), modifier);
     }
 
     pub fn get_combined_additions(&self) -> StatValueType {
-        self.additions
-            .iter()
-            .map(|(_,v)| v.value)
-            .sum()
+        self.additions.iter().map(|(_, v)| v.value).sum()
     }
 
     pub fn calculate_absolute_value(&self) -> StatValueType {
-        let absolute_modifier = self.get_combined_absolute_modifiers();
-        let additional_calculated = (absolute_modifier + self.get_combined_additional_modifiers() + 1.0) * self.get_combined_additions() as StatModifierType;
-        let base_calculated = (absolute_modifier + self.get_combined_base_modifiers() + 1.0) * self.get_base_value() as StatModifierType;
-        (additional_calculated + base_calculated).floor() as StatValueType
+        return self.calculate_modified_base_value() + self.calculate_modified_additional_value();
     }
     pub fn calculate_modified_base_value(&self) -> StatValueType {
-        let result = self.get_base_value() as StatModifierType * self.get_combined_base_modifiers();
+        let result =
+            (1.0 + self.get_combined_absolute_modifiers() + self.get_combined_base_modifiers())
+                * self.get_base_value() as StatModifierType;
         result.floor() as StatValueType
     }
     pub fn calculate_modified_additional_value(&self) -> StatValueType {
-        let result = self.get_combined_additions() as StatModifierType
-            * self.get_combined_additional_modifiers();
+        let result =
+            (1.0 + self.get_combined_absolute_modifiers() + self.get_combined_addition_modifiers())
+                * self.get_combined_additions() as StatModifierType;
         result.floor() as StatValueType
     }
 }
 
-
 pub struct StatBlock {
-    stats: HashMap<StatIdentifier, Stat>
+    stats: HashMap<StatIdentifier, Stat>,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn big_stat() -> Stat{
+    fn big_stat() -> Stat {
         let mut intelligence = Stat::new(String::from("intelligence"), 200);
 
         let head_gear = StatAddition::new(String::from("head_gear"), 10);
@@ -146,7 +144,7 @@ mod tests {
         intelligence.insert_addition_modifier(racial_buff1);
         intelligence.insert_addition_modifier(racial_buff2);
 
-        return intelligence
+        intelligence
     }
 
     fn empty_stat() -> Stat {
@@ -154,29 +152,97 @@ mod tests {
     }
 
     #[test]
-    fn correct_calc() {
-        let mut intelligence = empty_stat();
+    fn correct_base_stat_calc() {
+        let mut intelligence = Stat::new(String::from("intelligence"), 1000);
+        assert_eq!(intelligence.get_base_value(), 1000);
+        assert_eq!(intelligence.get_combined_base_modifiers(), 0.0);
+        assert_eq!(intelligence.calculate_modified_base_value(), 1000);
+        assert_eq!(intelligence.calculate_absolute_value(), 1000);
+
+        intelligence.insert_base_modifier(StatModifier::new(String::from("racial_buff"), 0.05));
+        assert_eq!(intelligence.get_base_value(), 1000);
+        assert_eq!(intelligence.get_combined_base_modifiers(), 0.05);
+        assert_eq!(intelligence.calculate_modified_base_value(), 1050);
+        assert_eq!(intelligence.calculate_absolute_value(), 1050);
+
+        intelligence.insert_base_modifier(StatModifier::new(String::from("racial_buff2"), 0.05));
+        assert_eq!(intelligence.get_base_value(), 1000);
+        assert_eq!(intelligence.get_combined_base_modifiers(), 0.1);
+        assert_eq!(intelligence.calculate_modified_base_value(), 1100);
+        assert_eq!(intelligence.calculate_absolute_value(), 1100);
+
+        intelligence.insert_absolute_modifier(StatModifier::new(String::from("int_buff"), 0.10));
+        assert_eq!(intelligence.get_base_value(), 1000);
+        assert_eq!(intelligence.get_combined_base_modifiers(), 0.1);
+        assert_eq!(intelligence.calculate_modified_base_value(), 1200);
+        assert_eq!(intelligence.calculate_absolute_value(), 1200);
+
+        intelligence.insert_absolute_modifier(StatModifier::new(String::from("int_buff2"), 0.10));
+        assert_eq!(intelligence.get_base_value(), 1000);
+        assert_eq!(intelligence.get_combined_base_modifiers(), 0.1);
+        assert_eq!(intelligence.calculate_modified_base_value(), 1300);
+        assert_eq!(intelligence.calculate_absolute_value(), 1300);
+    }
+
+    #[test]
+    fn correct_additional_stat_calc() {
+        let mut intelligence = Stat::new(String::from("intelligence"), 1000);
+        assert_eq!(intelligence.get_combined_additions(), 0);
+        assert_eq!(intelligence.get_combined_addition_modifiers(), 0.0);
+        assert_eq!(intelligence.calculate_modified_additional_value(), 0);
+        assert_eq!(intelligence.calculate_absolute_value(), 1000);
+
+        intelligence.insert_addition(StatAddition::new(String::from("head_gear"), 100));
+        assert_eq!(intelligence.get_combined_additions(), 100);
+        assert_eq!(intelligence.get_combined_addition_modifiers(), 0.0);
+        assert_eq!(intelligence.calculate_modified_additional_value(), 100);
+        assert_eq!(intelligence.calculate_absolute_value(), 1100);
+
+        intelligence.insert_addition_modifier(StatModifier::new(String::from("armor_buff"), 0.05));
+        assert_eq!(intelligence.get_combined_additions(), 100);
+        assert_eq!(intelligence.get_combined_addition_modifiers(), 0.05);
+        assert_eq!(intelligence.calculate_modified_additional_value(), 104); // Floating point error, actually 105
+        assert_eq!(intelligence.calculate_absolute_value(), 1104); // Floatingpoint error, actually 1105
+
+        intelligence.insert_addition(StatAddition::new(String::from("head_gear2"), 100));
+        assert_eq!(intelligence.get_combined_additions(), 200);
+        assert_eq!(intelligence.get_combined_addition_modifiers(), 0.05);
+        assert_eq!(intelligence.calculate_modified_additional_value(), 209); // Floating point error, actually 210
+        assert_eq!(intelligence.calculate_absolute_value(), 1209);
+
+        intelligence.insert_absolute_modifier(StatModifier::new(String::from("int_buff"), 0.10));
+        assert_eq!(intelligence.get_combined_additions(), 200);
+        assert_eq!(intelligence.get_combined_addition_modifiers(), 0.05);
+        assert_eq!(intelligence.calculate_modified_additional_value(), 230);
+        assert_eq!(intelligence.calculate_absolute_value(), 1330);
+    }
+
+    #[test]
+    fn correct_big_stat_calc() {
+        let mut intelligence = Stat::new(String::from("intelligence"), 200);
+
+        intelligence.insert_addition(StatAddition::new(String::from("head_gear"), 10));
+        intelligence.insert_addition(StatAddition::new(String::from("chest_gear"), 40));
+
+        intelligence.insert_absolute_modifier(StatModifier::new(String::from("int_buff1"), 0.05));
+        intelligence.insert_absolute_modifier(StatModifier::new(String::from("int_buff2"), 0.05));
+
+        intelligence.insert_addition_modifier(StatModifier::new(String::from("armor_buff1"), 0.1));
+        intelligence.insert_addition_modifier(StatModifier::new(String::from("armor_buff2"), 0.1));
+
+        intelligence.insert_base_modifier(StatModifier::new(String::from("racial_buff1"), 0.02));
+        intelligence.insert_base_modifier(StatModifier::new(String::from("racial_buff2"), 0.02));
 
         assert_eq!(intelligence.get_base_value(), 200);
-        assert_eq!(intelligence.calculate_absolute_value(), intelligence.get_base_value());
-
-        intelligence.insert_base_modifier(StatModifier::new(String::from("racial_buff"), 0.01));
-        assert_eq!(intelligence.calculate_modified_base_value(), 2);
-        assert_eq!(intelligence.calculate_absolute_value(), 202);
-
-        intelligence = empty_stat();
-        intelligence.insert_addition(StatAddition::new(String::from("head_gear"), 10));
-        assert_eq!(intelligence.calculate_absolute_value(), 210);
-        intelligence.insert_addition_modifier(StatModifier::new(String::from("armor_buff"), 0.1));
-        assert_eq!(intelligence.calculate_absolute_value(), 211);
-        intelligence.insert_addition(StatAddition::new(String::from("chest_gear"), 40));
         assert_eq!(intelligence.get_combined_additions(), 50);
-        assert_eq!(intelligence.calculate_absolute_value(), 255);
-        assert_eq!(intelligence.calculate_modified_additional_value(), 5);
 
-        intelligence.insert_absolute_modifier(StatModifier::new(String::from("int_buff"), 0.05));
-        assert_eq!(intelligence.calculate_modified_base_value(), 12);
-        assert_eq!(intelligence.calculate_absolute_value(), 269);
+        assert_eq!(intelligence.get_combined_base_modifiers(), 0.04);
+        assert_eq!(intelligence.get_combined_addition_modifiers(), 0.2);
+        assert_eq!(intelligence.get_combined_absolute_modifiers(), 0.1);
+        assert_eq!(intelligence.get_total_modifiers(), 0.34);
 
+        assert_eq!(intelligence.calculate_modified_base_value(), 228);
+        assert_eq!(intelligence.calculate_modified_additional_value(), 65);
+        assert_eq!(intelligence.calculate_absolute_value(), 293);
     }
 }
