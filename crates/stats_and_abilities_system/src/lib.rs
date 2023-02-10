@@ -1,33 +1,9 @@
-pub mod event_dispatcher;
-mod stats;
-use bevy::prelude::*;
-use event_dispatcher::EventDispatcher;
+pub mod stats;
+pub type StatValueType = i32;
+pub type StatModifierType = f32;
+pub type StatIdentifier = String;
 
-type TickRateType = u32;
+pub mod prelude {
 
-#[derive(StageLabel, Clone, Copy)]
-enum StatAbilityStage {
-    ClearDispatcher,
-}
-
-pub struct StatAbilityPlugin {
-    tick_rate: u32,
-}
-
-impl Plugin for StatAbilityPlugin {
-    fn build(&self, app: &mut App) {
-        app.insert_resource(EventDispatcher::default())
-            .add_stage_after(
-                CoreStage::PostUpdate,
-                StatAbilityStage::ClearDispatcher,
-                SystemStage::parallel(),
-            );
-    }
-}
-
-impl StatAbilityPlugin {
-    /// Tickrate describes how many ticks per second happen
-    pub fn new(tick_rate: TickRateType) -> Self {
-        Self { tick_rate }
-    }
+    pub use crate::stats::*;
 }

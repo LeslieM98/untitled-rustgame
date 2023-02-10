@@ -1,8 +1,8 @@
-use bevy::utils::HashMap;
+use std::collections::HashMap;
 
-pub type StatValueType = i32;
-pub type StatModifierType = f32;
-pub type StatIdentifier = String;
+use crate::StatIdentifier;
+use crate::StatModifierType;
+use crate::StatValueType;
 
 #[derive(Clone, Debug)]
 pub struct StatModifier {
@@ -115,36 +115,6 @@ pub struct StatBlock {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn big_stat() -> Stat {
-        let mut intelligence = Stat::new(String::from("intelligence"), 200);
-
-        let head_gear = StatAddition::new(String::from("head_gear"), 10);
-        let chest_gear = StatAddition::new(String::from("chest_gear"), 40);
-        intelligence.insert_addition(head_gear.clone());
-        intelligence.insert_addition(chest_gear.clone());
-
-        let int_buff1 = StatModifier::new(String::from("int_buff1"), 0.05);
-        let int_buff2 = StatModifier::new(String::from("int_buff2"), 0.05);
-        intelligence.insert_absolute_modifier(int_buff1);
-        intelligence.insert_absolute_modifier(int_buff2);
-
-        let armor_buff1 = StatModifier::new(String::from("armor_buff1"), 0.1);
-        let armor_buff2 = StatModifier::new(String::from("armor_buff2"), 0.1);
-        intelligence.insert_addition_modifier(armor_buff1);
-        intelligence.insert_addition_modifier(armor_buff2);
-
-        let racial_buff1 = StatModifier::new(String::from("racial_buff1"), 0.02);
-        let racial_buff2 = StatModifier::new(String::from("racial_buff2"), 0.02);
-        intelligence.insert_addition_modifier(racial_buff1);
-        intelligence.insert_addition_modifier(racial_buff2);
-
-        intelligence
-    }
-
-    fn empty_stat() -> Stat {
-        Stat::new(String::from("intelligence"), 200)
-    }
 
     #[test]
     fn correct_base_stat_calc() {
