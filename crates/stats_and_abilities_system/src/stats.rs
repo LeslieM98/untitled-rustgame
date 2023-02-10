@@ -166,13 +166,13 @@ mod tests {
         intelligence.insert_addition_modifier(StatModifier::new(String::from("armor_buff"), 0.05));
         assert_eq!(intelligence.get_combined_additions(), 100);
         assert_eq!(intelligence.get_combined_addition_modifiers(), 0.05);
-        assert_eq!(intelligence.calculate_modified_additional_value(), 104); // Floating point error, actually 105
-        assert_eq!(intelligence.calculate_absolute_value(), 1104); // Floatingpoint error, actually 1105
+        assert_eq!(intelligence.calculate_modified_additional_value(), 104); // FIXME: Floating point error, actually 105
+        assert_eq!(intelligence.calculate_absolute_value(), 1104); // FIXME: Floatingpoint error, actually 1105
 
         intelligence.insert_addition(StatAddition::new(String::from("head_gear2"), 100));
         assert_eq!(intelligence.get_combined_additions(), 200);
         assert_eq!(intelligence.get_combined_addition_modifiers(), 0.05);
-        assert_eq!(intelligence.calculate_modified_additional_value(), 209); // Floating point error, actually 210
+        assert_eq!(intelligence.calculate_modified_additional_value(), 209); // FIXME: Floating point error, actually 210
         assert_eq!(intelligence.calculate_absolute_value(), 1209);
 
         intelligence.insert_absolute_modifier(StatModifier::new(String::from("int_buff"), 0.10));
