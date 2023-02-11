@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use stats_and_abilities_system::prelude::StatBlock;
+use stats_and_abilities_system::prelude::Health;
 
 use crate::actor::player::PlayerMarker;
 use crate::actor::target::Target;
@@ -20,7 +20,7 @@ struct TargetTrackerUIHealthBarMarker;
 
 fn draw(
     mut commands: Commands,
-    stats_query: Query<&StatBlock>,
+    health_query: Query<&Health>,
     tracker_query: Query<&Target, With<PlayerMarker>>,
     ui_query: Query<Entity, With<TargetTrackerUIMarker>>,
 ) {
@@ -28,7 +28,10 @@ fn draw(
 
     for tracker in &tracker_query {
         if let Some(target) = tracker.targeted_entity {
-            let health_percentage = 1.0;
+            let health_percentage = health_query
+                .get(target)
+                .expect("Cannot find targeted entity")
+                .get_health_percentage();
 
             HealthBar::new(TargetTrackerUIMarker, TargetTrackerUIHealthBarMarker)
                 .with_width(100.0)

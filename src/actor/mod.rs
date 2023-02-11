@@ -5,7 +5,7 @@ pub mod target;
 use crate::actor::target::{Target, Targetable};
 use bevy::prelude::*;
 use bevy_mod_picking::PickableBundle;
-use stats_and_abilities_system::prelude::StatBlock;
+use stats_and_abilities_system::prelude::{StatBlock, Health};
 use std::time::SystemTime;
 
 #[derive(Component)]
@@ -38,6 +38,7 @@ pub struct Actor {
     pub name: Name,
     pub pbr: PbrBundle,
     pub stats: StatBlock,
+    pub health: Health,
     pub combat_status: CombatStatus,
     pub target: Target,
     targetable: Targetable,

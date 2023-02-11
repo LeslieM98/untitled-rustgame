@@ -2,7 +2,7 @@ use crate::actor::player::camera::PlayerCameraMarker;
 use crate::player_ui::widgets::HealthBar;
 use bevy::app::App;
 use bevy::prelude::*;
-use stats_and_abilities_system::prelude::StatBlock;
+use stats_and_abilities_system::prelude::{Health, StatBlock};
 
 pub struct NamePlateUIPlugin;
 
@@ -37,15 +37,15 @@ fn clear_ui(mut commands: Commands, ui_query: Query<Entity, With<NamePlateUIMark
 
 fn draw(
     mut commands: Commands,
-    stat_query: Query<(&GlobalTransform, &StatBlock)>,
+    stat_query: Query<(&GlobalTransform, &Health)>,
     camera_query: Query<(&Camera, &GlobalTransform), With<PlayerCameraMarker>>,
 ) {
     let (camera, camera_transform) = camera_query.get_single().expect("Player camera not found");
-    for (actor_transform, actor_stats) in &stat_query {
+    for (actor_transform, actor_health) in &stat_query {
         if let Some(ui_position) =
             camera.world_to_viewport(camera_transform, actor_transform.translation())
         {
-            instantiate(&mut commands, 1.0, &ui_position);
+            instantiate(&mut commands, actor_health.get_health_percentage(), &ui_position);
         }
     }
 }
