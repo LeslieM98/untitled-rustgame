@@ -1,7 +1,7 @@
 use crate::actor::npc::NPCMarker;
 use crate::actor::player::PlayerMarker;
-use crate::status_event::stats::*;
 use bevy::prelude::*;
+use stats_and_abilities_system::prelude::StatBlock;
 
 pub struct AIPlugin;
 
@@ -76,7 +76,7 @@ fn follow_main_task_movement_sub_task_planning(
 }
 
 fn work_move_to_sub_task(
-    npc_query: Query<(Entity, &Stats, &AIMovementTaskQueue)>,
+    npc_query: Query<(Entity, &StatBlock, &AIMovementTaskQueue)>,
     mut translation_query: Query<&mut Transform>,
     time: Res<Time>,
 ) {
@@ -85,8 +85,7 @@ fn work_move_to_sub_task(
         if let Some(SubTask::KeepDistance(target_translation, distance)) = first_task {
             let mut npc_transform = translation_query.get_mut(npc).expect("Could not find NPC");
             if target_translation.distance(npc_transform.translation) > *distance {
-                let translation_delta =
-                    npc_transform.forward() * stats.get_movement_velocity() * time.delta_seconds();
+                let translation_delta = npc_transform.forward() * 3.0 * time.delta_seconds();
                 npc_transform.translation += translation_delta;
             }
         }

@@ -1,4 +1,3 @@
-use crate::abilities::{aimed_shot, poison_arrow_tick};
 use crate::actor::player::PlayerMarker;
 use crate::actor::target::Target;
 use crate::settings::controls::ActionBarAction;

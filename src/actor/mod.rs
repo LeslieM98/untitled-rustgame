@@ -3,9 +3,9 @@ pub mod player;
 pub mod target;
 
 use crate::actor::target::{Target, Targetable};
-use crate::status_event::stats::*;
 use bevy::prelude::*;
 use bevy_mod_picking::PickableBundle;
+use stats_and_abilities_system::prelude::StatBlock;
 use std::time::SystemTime;
 
 #[derive(Component)]
@@ -37,7 +37,7 @@ impl Default for Relationship {
 pub struct Actor {
     pub name: Name,
     pub pbr: PbrBundle,
-    pub stats: Stats,
+    pub stats: StatBlock,
     pub combat_status: CombatStatus,
     pub target: Target,
     targetable: Targetable,

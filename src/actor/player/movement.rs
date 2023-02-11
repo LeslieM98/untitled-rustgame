@@ -1,6 +1,5 @@
 use crate::actor::player::PlayerMarker;
 use crate::settings::controls::MovementAction;
-use crate::status_event::stats::*;
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::ActionState;
 
@@ -11,12 +10,12 @@ pub fn get_system_set() -> SystemSet {
 }
 
 fn move_player(
-    mut query: Query<(&mut Transform, &Stats), With<PlayerMarker>>,
+    mut query: Query<(&mut Transform), With<PlayerMarker>>,
     inputs: Query<&ActionState<MovementAction>>,
     time: Res<Time>,
 ) {
     for input in inputs.iter() {
-        for (mut transform, stats) in query.iter_mut() {
+        for mut transform in query.iter_mut() {
             let mut direction = Vec3::ZERO;
 
             if input.pressed(MovementAction::Forward) {
@@ -40,8 +39,7 @@ fn move_player(
 
             if direction != Vec3::ZERO {
                 direction = direction.normalize();
-                transform.translation +=
-                    direction * stats.get_movement_velocity() * time.delta_seconds();
+                transform.translation += direction * 6.0 * time.delta_seconds();
             }
         }
     }

@@ -42,8 +42,7 @@ impl Default for PlayerBundle {
 }
 
 pub fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let mut player_stats = Stats::default();
-    player_stats.set_stat(Stats::MOVEMENT_SPEED_MODIFIER, 1000);
+    let mut player_stats = StatBlock::default();
     let player_bundle = PlayerBundle {
         actor: Actor {
             stats: player_stats,

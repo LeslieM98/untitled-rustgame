@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use bevy_ecs::prelude::Component;
+
 use crate::StatIdentifier;
 use crate::StatModifierType;
 use crate::StatValueType;
@@ -108,8 +110,9 @@ impl Stat {
     }
 }
 
+#[derive(Default, Component)]
 pub struct StatBlock {
-    stats: HashMap<StatIdentifier, Stat>,
+    pub stats: HashMap<StatIdentifier, Stat>,
 }
 
 #[cfg(test)]
