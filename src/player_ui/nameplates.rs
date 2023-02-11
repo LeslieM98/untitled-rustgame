@@ -18,7 +18,12 @@ impl Plugin for NamePlateUIPlugin {
     }
 }
 
-fn instantiate(commands: &mut Commands, health_percentage: f32, position: &Vec2) {
+fn instantiate(
+    commands: &mut Commands,
+    health_percentage: f32,
+    position: &Vec2,
+    font: Handle<Font>,
+) {
     HealthBar::new(NamePlateUIMarker, NamePlateUIHealthBarMarker)
         .with_width(100.0)
         .with_height(20.0)
@@ -26,6 +31,7 @@ fn instantiate(commands: &mut Commands, health_percentage: f32, position: &Vec2)
         .with_pos_bottom(position.y)
         .with_background_color(Color::rgb(0.3, 0.3, 0.3))
         .with_health_color(Color::rgb(1.0, 0.3, 0.3))
+        .with_font(Some(font))
         .draw(commands, health_percentage);
 }
 
@@ -39,13 +45,20 @@ fn draw(
     mut commands: Commands,
     stat_query: Query<(&GlobalTransform, &Health)>,
     camera_query: Query<(&Camera, &GlobalTransform), With<PlayerCameraMarker>>,
+    asset_server: Res<AssetServer>,
 ) {
     let (camera, camera_transform) = camera_query.get_single().expect("Player camera not found");
     for (actor_transform, actor_health) in &stat_query {
         if let Some(ui_position) =
             camera.world_to_viewport(camera_transform, actor_transform.translation())
         {
-            instantiate(&mut commands, actor_health.get_health_percentage(), &ui_position);
+            let font = asset_server.load("fonts/FiraMono-Medium.ttf");
+            instantiate(
+                &mut commands,
+                actor_health.get_health_percentage(),
+                &ui_position,
+                font,
+            );
         }
     }
 }

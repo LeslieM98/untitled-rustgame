@@ -29,6 +29,7 @@ mod widgets {
         current_health_marker: U,
         health_color: Color,
         background_color: Color,
+        font: Option<Handle<Font>>,
     }
 
     impl<T, U> HealthBar<T, U>
@@ -36,6 +37,9 @@ mod widgets {
         T: Component + Clone,
         U: Component + Clone,
     {
+        pub fn with_font(self, font: Option<Handle<Font>>) -> Self {
+            Self { font, ..self }
+        }
         pub fn with_width(self, width: f32) -> Self {
             Self { width, ..self }
         }
@@ -71,6 +75,7 @@ mod widgets {
                 pos_bottom: 20.0,
                 health_color: Color::rgb(1.0, 0.3, 0.3),
                 background_color: Color::rgb(0.3, 0.3, 0.3),
+                font: None,
             }
         }
 
@@ -111,6 +116,18 @@ mod widgets {
                             ..default()
                         })
                         .insert(self.current_health_marker.clone());
+                })
+                .with_children(|parent| {
+                    if let Some(ref font_handle) = self.font {
+                        parent.spawn(TextBundle::from_section(
+                            "TEST",
+                            TextStyle {
+                                font: font_handle.clone_weak(),
+                                font_size: 25.0,
+                                color: Color::WHITE,
+                            },
+                        ));
+                    };
                 });
         }
     }
