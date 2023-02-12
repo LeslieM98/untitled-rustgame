@@ -28,10 +28,9 @@ fn draw(
 
     for tracker in &tracker_query {
         if let Some(target) = tracker.targeted_entity {
-            let health_percentage = health_query
+            let health = health_query
                 .get(target)
-                .expect("Cannot find targeted entity")
-                .get_health_percentage();
+                .expect("Cannot find targeted entity");
 
             HealthBar::new(TargetTrackerUIMarker, TargetTrackerUIHealthBarMarker)
                 .with_width(100.0)
@@ -40,7 +39,7 @@ fn draw(
                 .with_pos_bottom(0.0)
                 .with_background_color(Color::rgb(0.3, 0.3, 0.3))
                 .with_health_color(Color::rgb(1.0, 0.3, 0.3))
-                .draw(&mut commands, health_percentage);
+                .draw(&mut commands, health);
         }
     }
 }

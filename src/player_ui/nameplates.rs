@@ -18,12 +18,7 @@ impl Plugin for NamePlateUIPlugin {
     }
 }
 
-fn instantiate(
-    commands: &mut Commands,
-    health_percentage: f32,
-    position: &Vec2,
-    font: Handle<Font>,
-) {
+fn instantiate(commands: &mut Commands, health: &Health, position: &Vec2, font: Handle<Font>) {
     HealthBar::new(NamePlateUIMarker, NamePlateUIHealthBarMarker)
         .with_width(100.0)
         .with_height(20.0)
@@ -32,7 +27,7 @@ fn instantiate(
         .with_background_color(Color::rgb(0.3, 0.3, 0.3))
         .with_health_color(Color::rgb(1.0, 0.3, 0.3))
         .with_font(Some(font))
-        .draw(commands, health_percentage);
+        .draw(commands, health);
 }
 
 fn clear_ui(mut commands: Commands, ui_query: Query<Entity, With<NamePlateUIMarker>>) {
@@ -53,12 +48,7 @@ fn draw(
             camera.world_to_viewport(camera_transform, actor_transform.translation())
         {
             let font = asset_server.load("fonts/FiraMono-Medium.ttf");
-            instantiate(
-                &mut commands,
-                actor_health.get_health_percentage(),
-                &ui_position,
-                font,
-            );
+            instantiate(&mut commands, actor_health, &ui_position, font);
         }
     }
 }

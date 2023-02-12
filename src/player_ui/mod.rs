@@ -15,6 +15,7 @@ impl Plugin for PlayerUi {
 }
 mod widgets {
     use bevy::prelude::*;
+    use stats_and_abilities_system::prelude::Health;
 
     pub struct HealthBar<T, U>
     where
@@ -79,7 +80,7 @@ mod widgets {
             }
         }
 
-        pub fn draw(&self, commands: &mut Commands, health_percentage: f32) {
+        pub fn draw(&self, commands: &mut Commands, health: &Health) {
             commands
                 .spawn(NodeBundle {
                     style: Style {
@@ -101,7 +102,7 @@ mod widgets {
                         .spawn(NodeBundle {
                             style: Style {
                                 size: Size::new(
-                                    Val::Px(self.width * health_percentage),
+                                    Val::Px(self.width * health.get_health_percentage()),
                                     Val::Px(self.height),
                                 ),
                                 position_type: PositionType::Relative,
@@ -120,7 +121,7 @@ mod widgets {
                 .with_children(|parent| {
                     if let Some(ref font_handle) = self.font {
                         parent.spawn(TextBundle::from_section(
-                            "TEST",
+                            format!("{}/{}", health.get_current(), health.get_maximum()),
                             TextStyle {
                                 font: font_handle.clone_weak(),
                                 font_size: 25.0,
