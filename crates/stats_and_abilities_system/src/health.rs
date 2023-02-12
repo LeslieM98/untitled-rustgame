@@ -1,10 +1,13 @@
 use bevy_ecs::prelude::Component;
+use getset::Getters;
 
 use crate::StatValueType;
 
-#[derive(Component)]
+#[derive(Component, Getters, PartialEq)]
 pub struct Health {
+    #[getset(get = "pub")]
     current: StatValueType,
+    #[getset(get = "pub")]
     maximum: StatValueType,
 }
 
@@ -22,18 +25,10 @@ impl Health {
         }
     }
 
-    pub fn get_current(&self) -> StatValueType {
-        self.current
-    }
-
-    pub fn get_maximum(&self) -> StatValueType {
-        self.maximum
-    }
-
     pub fn get_health_percentage(&self) -> f32 {
         self.current as f32 / self.maximum as f32
     }
-    
+
     pub fn apply_damage(&mut self, value: StatValueType) -> StatValueType {
         let new_health = self.current - value;
         if new_health < 0 {
@@ -66,23 +61,23 @@ mod tests {
         let mut subject = Health::new(100);
         let over_damage = subject.apply_damage(99);
         assert_eq!(over_damage, 0);
-        assert_eq!(subject.get_current(), 1);
+        assert_eq!(*subject.current(), 1);
 
         let over_damage = subject.apply_damage(50);
         assert_eq!(over_damage, 49);
-        assert_eq!(subject.get_current(), 0);
+        assert_eq!(*subject.current(), 0);
     }
 
     #[test]
     fn apply_heal() {
         let mut subject = Health::new(100);
         subject.apply_damage(50);
-        assert_eq!(subject.get_current(), 50);
+        assert_eq!(*subject.current(), 50);
         let over_heal = subject.apply_heal(49);
-        assert_eq!(subject.get_current(), 99);
+        assert_eq!(*subject.current(), 99);
         assert_eq!(over_heal, 0);
         let over_heal = subject.apply_heal(50);
-        assert_eq!(subject.get_current(), subject.get_maximum());
+        assert_eq!(*subject.current(), *subject.maximum());
         assert_eq!(over_heal, 49);
     }
 }
