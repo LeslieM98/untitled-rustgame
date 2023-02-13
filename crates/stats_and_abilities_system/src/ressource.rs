@@ -1,18 +1,47 @@
 use std::collections::HashMap;
 
+use bevy_ecs::prelude::Component;
+
 use crate::{StatIdentifier, StatValueType};
 
-pub struct Ressource {
-    identifier: StatIdentifier,
-    current: StatValueType,
-    maximum: StatValueType,
+pub struct ActorResource {
+    pub identifier: StatIdentifier,
+    pub current: StatValueType,
+    pub maximum: StatValueType,
 }
 
-pub struct RessourceBundle {
-    ressources: HashMap<StatIdentifier, StatValueType>,
+#[derive(Default, Component)]
+pub struct ActorRessourceBundle {
+    pub resources: HashMap<StatIdentifier, ActorResource>,
 }
 
-impl Ressource {
+impl ActorRessourceBundle {
+    pub fn empty() -> Self {
+        Self::default()
+    }
+
+    pub fn new(resource: ActorResource) -> Self {
+        let mut r = Self::empty();
+        r.resources.insert(resource.identifier.clone(), resource);
+        r
+    }
+
+    pub fn get_first(&self) -> Option<&ActorResource> {
+        for (_, v) in &self.resources {
+            return Some(v);
+        }
+        return None;
+    }
+
+    pub fn get_first_mut(&mut self) -> Option<&mut ActorResource> {
+        for (_, v) in &mut self.resources {
+            return Some(v);
+        }
+        return None;
+    }
+}
+
+impl ActorResource {
     pub fn new(identifier: StatIdentifier, maximum: StatValueType) -> Self {
         Self {
             identifier,
@@ -20,19 +49,6 @@ impl Ressource {
             current: maximum,
         }
     }
-
-    pub fn get_current(&self) -> &StatValueType {
-        &self.current
-    }
-
-    pub fn get_maximum(&self) -> &StatValueType {
-        &self.maximum
-    }
-
-    pub fn get_identifier(&self) -> &StatIdentifier {
-        &self.identifier
-    }
-
     pub fn get_percantage(&self) -> f32 {
         self.current as f32 / self.maximum as f32
     }
