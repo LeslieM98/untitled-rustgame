@@ -3,7 +3,7 @@ use rust_game::actor::npc::Enemy;
 use rust_game::debug::DebugPlugin;
 use rust_game::Game;
 use std::env;
-use std::fmt::Debug;
+use std::f32::consts::PI;
 
 struct DebugScene;
 
@@ -22,6 +22,21 @@ fn load_debug_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
         transform: Transform::from_xyz(2.0, 0.0, -5.0),
         ..Default::default()
     });
+
+    let sun = DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            shadows_enabled: true,
+            ..default()
+        },
+        transform: Transform {
+            translation: Vec3::new(0.0, 2.0, 0.0),
+            rotation: Quat::from_rotation_x(-PI / 4.),
+            ..default()
+        },
+        ..default()
+    };
+
+    commands.spawn(sun);
 }
 
 fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -42,15 +57,7 @@ fn spawn_enemies(
         &mut materials,
     );
 
-    let enemy2 = Enemy::from_pos(
-        Transform::from_xyz(-3.0, 1.0, 0.0),
-        &mut meshes,
-        &asset_server,
-        &mut materials,
-    );
-
     commands.spawn(enemy1);
-    commands.spawn(enemy2);
 }
 
 fn main() {
