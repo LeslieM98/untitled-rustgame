@@ -57,6 +57,46 @@ impl Health {
     }
 }
 
+pub mod events {
+    use crate::health::Health;
+    use crate::stats::StatBlock;
+    use crate::StatValueType;
+
+    type DamageApplicationType = Box<dyn FnOnce(&StatValueType, &mut Health, &StatBlock)>;
+
+    pub struct DamageEvent{
+        value: StatValueType,
+        application: DamageApplicationType
+    }
+
+    impl Default for DamageEvent {
+        fn default() -> Self {
+            Self{
+                value: 0,
+                application: Box::new(|value, target_health, _target_stats| {target_health.apply_damage(*value);})
+            }
+        }
+    }
+
+    impl DamageEvent {
+        pub fn apply(self, target_health: &mut Health, target_stats: &StatBlock) {
+            let application = self.application;
+            application(&self.value, target_health, target_stats);
+        }
+
+        pub fn with_default_application(value: StatValueType) -> Self{
+            Self{
+                value, ..Self::default()
+            }
+        }
+
+        pub fn new(value: StatValueType, application: DamageApplicationType) -> Self {
+            Self { value, application }
+        }
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -84,5 +124,26 @@ mod tests {
         let over_heal = subject.apply_heal(50);
         assert_eq!(subject.get_current(), subject.get_maximum());
         assert_eq!(over_heal, 49);
+    }
+
+    mod event {
+        use crate::health::events::DamageEvent;
+        use crate::health::Health;
+        use crate::stats::StatBlock;
+
+        #[test]
+        fn apply_default_damage_event() {
+            let event = DamageEvent::default();
+            let mut health = Health::new(100);
+            let stats = StatBlock::default();
+
+            assert_eq!(health.current, 100);
+            event.apply(&mut health, &stats);
+            assert_eq!(health.current, 100);
+
+            let event = DamageEvent::with_default_application(20);
+            event.apply(&mut health, &stats);
+            assert_eq!(health.current, 80);
+        }
     }
 }
