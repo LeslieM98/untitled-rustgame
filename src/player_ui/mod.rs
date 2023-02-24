@@ -121,7 +121,7 @@ mod widgets {
                 .with_children(|parent| {
                     if let Some(ref font_handle) = self.font {
                         parent.spawn(TextBundle::from_section(
-                            format!("{}/{}", health.get_current(), health.get_maximum()),
+                            format!("{}/{}", health.current(), health.maximum()),
                             TextStyle {
                                 font: font_handle.clone_weak(),
                                 font_size: 25.0,

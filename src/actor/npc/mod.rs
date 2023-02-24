@@ -8,7 +8,7 @@ pub struct EnemyPlugin;
 
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(spawn).add_plugin(AIPlugin);
+        app.add_plugin(AIPlugin);
     }
 }
 
@@ -55,28 +55,4 @@ impl Default for Enemy {
             marker: NPCMarker,
         }
     }
-}
-
-fn spawn(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    let enemy1 = Enemy::from_pos(
-        Transform::from_xyz(3.0, 1.0, 0.0),
-        &mut meshes,
-        &asset_server,
-        &mut materials,
-    );
-
-    let enemy2 = Enemy::from_pos(
-        Transform::from_xyz(-3.0, 1.0, 0.0),
-        &mut meshes,
-        &asset_server,
-        &mut materials,
-    );
-
-    commands.spawn(enemy1);
-    commands.spawn(enemy2);
 }

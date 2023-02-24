@@ -12,8 +12,7 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(spawn_player)
-            .add_system(animation)
+        app.add_system(animation)
             .add_system_set(movement::get_system_set())
             .add_system_set(camera::get_system_set())
             .add_system_set(targeting::get_system_set())
@@ -41,7 +40,7 @@ impl Default for PlayerBundle {
     }
 }
 
-pub fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn spawn_player(mut commands: Commands, player_model: Handle<Scene>) {
     let mut player_stats = StatBlock::default();
     let player_bundle = PlayerBundle {
         actor: Actor {
@@ -52,7 +51,7 @@ pub fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
     };
 
     let player_scene = SceneBundle {
-        scene: asset_server.load("glTF/base model/base_model.gltf#Scene0"),
+        scene: player_model,
         ..default()
     };
 
