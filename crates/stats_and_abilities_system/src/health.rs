@@ -1,4 +1,4 @@
-use bevy_ecs::prelude::Component;
+use bevy::prelude::Component;
 use getset::Getters;
 
 use crate::StatValueType;
@@ -57,18 +57,21 @@ pub mod events {
     use crate::stats::StatBlock;
     use crate::StatValueType;
 
-    type DamageApplicationType = Box<dyn FnOnce(&StatValueType, &mut Health, &StatBlock)>;
+    type DamageApplicationType =
+        Box<dyn FnOnce(&StatValueType, &mut Health, &StatBlock) + Send + Sync>;
 
-    pub struct DamageEvent{
+    pub struct DamageEvent {
         value: StatValueType,
-        application: DamageApplicationType
+        application: DamageApplicationType,
     }
 
     impl Default for DamageEvent {
         fn default() -> Self {
-            Self{
+            Self {
                 value: 0,
-                application: Box::new(|value, target_health, _target_stats| {target_health.apply_damage(*value);})
+                application: Box::new(|value, target_health, _target_stats| {
+                    target_health.apply_damage(*value);
+                }),
             }
         }
     }
@@ -79,9 +82,10 @@ pub mod events {
             application(&self.value, target_health, target_stats);
         }
 
-        pub fn with_default_application(value: StatValueType) -> Self{
-            Self{
-                value, ..Self::default()
+        pub fn with_default_application(value: StatValueType) -> Self {
+            Self {
+                value,
+                ..Self::default()
             }
         }
 
@@ -90,7 +94,6 @@ pub mod events {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {

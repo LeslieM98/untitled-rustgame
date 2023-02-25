@@ -5,7 +5,7 @@ pub mod target;
 use crate::actor::target::{Target, Targetable};
 use bevy::prelude::*;
 use bevy_mod_picking::PickableBundle;
-use stats_and_abilities_system::prelude::{StatBlock, Health};
+use stats_and_abilities_system::prelude::{Health, StatBlock};
 use std::time::SystemTime;
 
 #[derive(Component)]

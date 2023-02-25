@@ -1,3 +1,4 @@
+pub mod event_queue;
 pub mod health;
 pub mod ressource;
 pub mod stats;

@@ -1,6 +1,5 @@
+use bevy::prelude::Component;
 use std::collections::HashMap;
-
-use bevy_ecs::prelude::Component;
 
 use crate::StatIdentifier;
 use crate::StatModifierType;
