@@ -11,7 +11,7 @@ members = ["crates/*"]
 [dependencies]
 stats_and_abilities_system = {path = "crates/stats_and_abilities_system"}
 
-bevy = { version = "0.9", features = ["png"] }
+bevy = { version = "0.9.1", features = ["png", "dynamic"] }
 bevy_editor_pls = "0.2"
 bevy_egui = "0.19"
 bevy_mod_picking = "0.11"
