@@ -32,7 +32,7 @@ pub struct ServerPlugin {
 }
 
 impl ServerPlugin {
-    pub fn new(ip: &str, port: u32) -> Self {
+    pub fn new(ip: &str, port: u16) -> Self {
         Self {
             ip: String::from(ip),
             port,
