@@ -1,28 +1,28 @@
 use crate::network::*;
-use std::net::UdpSocket;
+use std::net::{SocketAddr, TcpListener};
 
-#[derive(Resource)]
-pub struct ListeningServer {
-    value: UdpSocket,
+pub enum ConnectionPacket {
+    Initiate,
+    ConnectionGranted {
+        udp_target: SocketAddr,
+        player_identifier: usize,
+    },
+    ConnectionRefused(usize),
 }
 
-impl ListeningServer {
-    fn bind(ip: String, port: u32) -> Self {
-        let bind_address = format!("{}:{}", ip, port);
-        let socket = match UdpSocket::bind(bind_address.clone()) {
-            Ok(socket) => Self { value: socket },
-            Err(error) => panic!("{}", error.to_string()),
+#[derive(Resource)]
+pub struct ConnectionServer {
+    value: TcpListener,
+}
+
+impl ConnectionServer {
+    fn new(ip: &str, port: u32) -> Self {
+        let ip_str = format!("{}:{}", ip, port);
+        let socket = ConnectionServer {
+            value: TcpListener::bind(&ip_str).expect("Cannot open Connection Server"),
         };
-
-        info!("Server opened at {}", bind_address);
+        info!("Opening Server at {}", ip_str);
         socket
-    }
-    pub fn get(&self) -> &UdpSocket {
-        &self.value
-    }
-
-    pub fn get_mut(&mut self) -> &mut UdpSocket {
-        &mut self.value
     }
 }
 
@@ -46,6 +46,8 @@ impl Plugin for ServerPlugin {
             value: self.ip.clone(),
         })
         .insert_resource(PortResource { value: self.port })
-        .insert_resource(ListeningServer::bind(self.ip.clone(), self.port));
+        .insert_resource(ConnectionServer::new(&self.ip, self.port));
     }
 }
+
+fn handle_incoming_connections(connection_server: Res<ConnectionServer>) {}

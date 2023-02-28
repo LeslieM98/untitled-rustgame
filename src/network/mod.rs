@@ -11,3 +11,8 @@ struct IpResource {
 struct PortResource {
     value: u32,
 }
+
+#[derive(Component)]
+struct NetworkIdentifier {
+    value: u32,
+}
