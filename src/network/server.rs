@@ -16,7 +16,7 @@ pub struct ConnectionServer {
 }
 
 impl ConnectionServer {
-    fn new(ip: &str, port: u32) -> Self {
+    fn new(ip: &str, port: u16) -> Self {
         let ip_str = format!("{}:{}", ip, port);
         let socket = ConnectionServer {
             value: TcpListener::bind(&ip_str).expect("Cannot open Connection Server"),

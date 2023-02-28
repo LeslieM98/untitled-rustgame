@@ -9,10 +9,10 @@ struct IpResource {
 
 #[derive(Resource)]
 struct PortResource {
-    value: u32,
+    value: u16,
 }
 
 #[derive(Component)]
 struct NetworkIdentifier {
-    value: u32,
+    value: u16,
 }
