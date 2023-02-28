@@ -97,11 +97,14 @@ fn init(
     npc_queue: Query<Entity, With<NPCMarker>>,
     player_queue: Query<Entity, With<PlayerMarker>>,
 ) {
-    let player = player_queue.get_single().expect("Could not find Player");
-    for npc in npc_queue.iter() {
-        commands.entity(npc).insert(AIMovementTaskQueue {
-            main_task: Task::Follow(player),
-            ..default()
-        });
+    if let Some(player) = player_queue.iter().last() {
+        for npc in npc_queue.iter() {
+            commands.entity(npc).insert(AIMovementTaskQueue {
+                main_task: Task::Follow(player),
+                ..default()
+            });
+        }
+    } else {
+        warn!("Cannot find player");
     }
 }

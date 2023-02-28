@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use rust_game::actor::npc::Enemy;
 use rust_game::debug::DebugPlugin;
-use rust_game::Game;
+use rust_game::GameClient;
 use std::env;
 use std::f32::consts::PI;
 
@@ -62,7 +62,7 @@ fn spawn_enemies(
 
 fn main() {
     let mut app = App::new();
-    app.add_plugin(Game).add_plugin(DebugScene);
+    app.add_plugin(GameClient).add_plugin(DebugScene);
 
     let args: Vec<String> = env::args().collect();
     if args.contains(&String::from("debug-editor")) {
