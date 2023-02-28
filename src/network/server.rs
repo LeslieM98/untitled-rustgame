@@ -1,5 +1,4 @@
 use crate::network::*;
-use bevy::prelude::*;
 use std::net::UdpSocket;
 
 #[derive(Resource)]

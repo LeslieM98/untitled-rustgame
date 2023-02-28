@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 pub mod actor;
 pub mod debug;
 mod network;

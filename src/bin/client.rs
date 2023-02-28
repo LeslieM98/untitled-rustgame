@@ -1,6 +1,6 @@
 use bevy::prelude::App;
-use rust_game::Game;
+use rust_game::GameClient;
 
 fn main() {
-    App::new().add_plugin(Game).run();
+    App::new().add_plugin(GameClient).run();
 }

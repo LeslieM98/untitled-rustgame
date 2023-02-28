@@ -48,7 +48,7 @@ impl ActorResource {
             current: maximum,
         }
     }
-    pub fn get_percantage(&self) -> f32 {
+    pub fn get_percentage(&self) -> f32 {
         self.current as f32 / self.maximum as f32
     }
 }

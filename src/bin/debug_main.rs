@@ -39,7 +39,7 @@ fn load_debug_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(sun);
 }
 
-fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn spawn_player(commands: Commands, asset_server: Res<AssetServer>) {
     let player_model = asset_server.load("glTF/base model/base_model.gltf#Scene0");
     rust_game::actor::player::spawn_player(commands, player_model);
 }

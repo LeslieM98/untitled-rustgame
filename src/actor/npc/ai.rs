@@ -80,7 +80,7 @@ fn work_move_to_sub_task(
     mut translation_query: Query<&mut Transform>,
     time: Res<Time>,
 ) {
-    for (npc, stats, task_queue) in npc_query.iter() {
+    for (npc, _, task_queue) in npc_query.iter() {
         let first_task = task_queue.sub_task_queue.first();
         if let Some(SubTask::KeepDistance(target_translation, distance)) = first_task {
             let mut npc_transform = translation_query.get_mut(npc).expect("Could not find NPC");

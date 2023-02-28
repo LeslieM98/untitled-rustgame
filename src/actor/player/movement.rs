@@ -10,7 +10,7 @@ pub fn get_system_set() -> SystemSet {
 }
 
 fn move_player(
-    mut query: Query<(&mut Transform), With<PlayerMarker>>,
+    mut query: Query<&mut Transform, With<PlayerMarker>>,
     inputs: Query<&ActionState<MovementAction>>,
     time: Res<Time>,
 ) {

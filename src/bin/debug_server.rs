@@ -1,4 +1,3 @@
-use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use rust_game::GameServer;
 

@@ -2,7 +2,7 @@ use crate::actor::player::camera::PlayerCameraMarker;
 use crate::player_ui::widgets::HealthBar;
 use bevy::app::App;
 use bevy::prelude::*;
-use stats_and_abilities_system::prelude::{Health, StatBlock};
+use stats_and_abilities_system::prelude::Health;
 
 pub struct NamePlateUIPlugin;
 

@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 pub mod event_queue;
 pub mod health;
 pub mod ressource;
