@@ -28,7 +28,7 @@ impl ConnectionServer {
 
 pub struct ServerPlugin {
     ip: String,
-    port: u32,
+    port: u16,
 }
 
 impl ServerPlugin {
