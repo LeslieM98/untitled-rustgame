@@ -30,7 +30,7 @@ impl Plugin for ServerPlugin {
     }
 }
 
-#[derive(Decode, Encode)]
+#[derive(Decode, Encode, Debug)]
 pub enum ConnectionPacket {
     Initiate(SocketAddr),
     ConnectionGranted(SocketAddr, PlayerIdentifier),
