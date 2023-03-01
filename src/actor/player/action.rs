@@ -15,12 +15,12 @@ fn player_action(
     player_queue: Query<(Entity, &Target), With<PlayerMarker>>,
 ) {
     for action in actions.iter() {
-        let (_player_entity, player_target) =
-            player_queue.get_single().expect("Cannot find player");
-        if action.just_pressed(ActionBarAction::Button1) {
-            if let Some(_target_entity) = player_target.targeted_entity {}
-        } else if action.just_pressed(ActionBarAction::Button2) {
-            if let Some(_target_entity) = player_target.targeted_entity {}
+        for (_player_entity, player_target) in &player_queue {
+            if action.just_pressed(ActionBarAction::Button1) {
+                if let Some(_target_entity) = player_target.targeted_entity {}
+            } else if action.just_pressed(ActionBarAction::Button2) {
+                if let Some(_target_entity) = player_target.targeted_entity {}
+            }
         }
     }
 }
