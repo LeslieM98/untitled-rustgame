@@ -42,13 +42,14 @@ fn draw(
     camera_query: Query<(&Camera, &GlobalTransform), With<PlayerCameraMarker>>,
     asset_server: Res<AssetServer>,
 ) {
-    let (camera, camera_transform) = camera_query.get_single().expect("Player camera not found");
-    for (actor_transform, actor_health) in &stat_query {
-        if let Some(ui_position) =
-            camera.world_to_viewport(camera_transform, actor_transform.translation())
-        {
-            let font = asset_server.load("fonts/FiraMono-Medium.ttf");
-            instantiate(&mut commands, actor_health, &ui_position, font);
+    for (camera, camera_transform) in &camera_query {
+        for (actor_transform, actor_health) in &stat_query {
+            if let Some(ui_position) =
+                camera.world_to_viewport(camera_transform, actor_transform.translation())
+            {
+                let font = asset_server.load("fonts/FiraMono-Medium.ttf");
+                instantiate(&mut commands, actor_health, &ui_position, font);
+            }
         }
     }
 }
