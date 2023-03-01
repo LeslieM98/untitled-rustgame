@@ -6,8 +6,6 @@ use bincode::{config, Decode, Encode};
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpListener, UdpSocket};
 
-type PlayerIdentifier = usize;
-
 pub struct ServerPlugin {
     ip: String,
     port: u16,

@@ -1,18 +1,21 @@
 use bevy::prelude::*;
 
+pub mod client;
 pub mod server;
 
+type PlayerIdentifier = usize;
+
 #[derive(Resource)]
-struct IpResource {
+pub struct IpResource {
     value: String,
 }
 
 #[derive(Resource)]
-struct PortResource {
+pub struct PortResource {
     value: u16,
 }
 
 #[derive(Component)]
-struct NetworkIdentifier {
+pub struct NetworkIdentifier {
     value: u16,
 }
