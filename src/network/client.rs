@@ -26,7 +26,8 @@ impl Plugin for ClientPlugin {
             value: self.ip.clone(),
         })
         .insert_resource(PortResource { value: self.port })
-        .insert_resource(ConnectionServer::new(self.ip.clone(), self.port));
+        .insert_resource(ConnectionServer::new(self.ip.clone(), self.port))
+        .add_startup_system(connect_to_serer);
     }
 }
 

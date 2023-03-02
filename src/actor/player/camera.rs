@@ -90,17 +90,18 @@ fn camera_scroll(
     const MAX_DISTANCE: f32 = 20.0;
     if !scroll_events.is_empty() {
         let delta: f32 = scroll_events.iter().map(|event| event.y).sum();
-        let mut transform = query.get_single_mut().unwrap();
-        let mut new_value = transform.translation.z + -delta;
-        new_value = if new_value < MIN_DISTANCE {
-            MIN_DISTANCE
-        } else if new_value > MAX_DISTANCE {
-            MAX_DISTANCE
-        } else {
-            new_value
-        };
+        for mut camera_transform in &mut query {
+            let mut new_value = camera_transform.translation.z + -delta;
+            new_value = if new_value < MIN_DISTANCE {
+                MIN_DISTANCE
+            } else if new_value > MAX_DISTANCE {
+                MAX_DISTANCE
+            } else {
+                new_value
+            };
 
-        transform.translation.z = new_value;
+            camera_transform.translation.z = new_value;
+        }
     }
 }
 
