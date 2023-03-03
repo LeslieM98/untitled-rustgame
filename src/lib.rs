@@ -2,7 +2,7 @@
 
 pub mod actor;
 pub mod debug;
-mod network;
+pub mod network;
 pub mod player_ui;
 pub mod settings;
 

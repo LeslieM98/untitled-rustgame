@@ -26,7 +26,9 @@ impl Plugin for ServerPlugin {
             value: self.ip.clone(),
         })
         .insert_resource(PortResource { value: self.port })
-        .insert_resource(ConnectionServer::new(&self.ip, self.port));
+        .insert_resource(ConnectionServer::new(&self.ip, self.port))
+        .insert_resource(Connections::default())
+        .add_system(handle_incoming_connections_system);
     }
 }
 
@@ -43,7 +45,7 @@ pub struct ConnectionServer {
 }
 
 impl ConnectionServer {
-    fn new(ip: &str, port: u16) -> Self {
+    pub fn new(ip: &str, port: u16) -> Self {
         let ip_str = format!("{}:{}", ip, port);
         let socket = ConnectionServer {
             listener: TcpListener::bind(&ip_str).expect("Cannot open Connection Server"),
@@ -52,7 +54,7 @@ impl ConnectionServer {
         socket
     }
 
-    fn handle_connection_protocol(&self, connections: &mut Connections) {
+    pub fn handle_connection_protocol(&self, connections: &mut Connections) {
         // server answers with udp port
         for incoming in self.listener.incoming() {
             let mut stream = incoming.expect("Cannot open Tcp Stream");
@@ -72,6 +74,8 @@ impl ConnectionServer {
                     .add_connection(client)
                     .expect("No player id free");
 
+                info!("{} connected", server_addr);
+
                 ConnectionGranted(server_addr, player_id)
             } else {
                 ConnectionRefused(0)
@@ -84,12 +88,12 @@ impl ConnectionServer {
 }
 
 #[derive(Resource, Default)]
-struct Connections {
+pub struct Connections {
     value: HashMap<PlayerIdentifier, UdpSocket>,
 }
 
 impl Connections {
-    fn add_connection(&mut self, connection: UdpSocket) -> Option<PlayerIdentifier> {
+    pub fn add_connection(&mut self, connection: UdpSocket) -> Option<PlayerIdentifier> {
         for new_id in 0..256 {
             if !self.value.contains_key(&new_id) {
                 self.value.insert(new_id, connection);
@@ -98,4 +102,18 @@ impl Connections {
         }
         None
     }
+}
+
+pub fn handle_incoming_connections_system(
+    mut active_connections: ResMut<Connections>,
+    connection_server: Res<ConnectionServer>,
+) {
+    handle_incoming_connections(&mut active_connections, &connection_server);
+}
+
+pub fn handle_incoming_connections(
+    active_connections: &mut Connections,
+    connection_server: &ConnectionServer,
+) {
+    connection_server.handle_connection_protocol(active_connections);
 }
