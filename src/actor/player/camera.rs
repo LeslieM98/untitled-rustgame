@@ -1,17 +1,11 @@
 use crate::actor::player::*;
 use bevy::prelude::*;
+use bevy::window::PrimaryWindow;
 
 #[derive(Component)]
 pub struct PlayerCameraMarker;
 #[derive(Component)]
 pub struct CameraBaseNodeMarker;
-
-pub fn get_system_set() -> SystemSet {
-    SystemSet::new()
-        .label("PlayerCameraSystems")
-        .with_system(orbit_camera)
-        .with_system(camera_scroll)
-}
 
 pub fn spawn(commands: &mut Commands) -> Entity {
     // Camera
@@ -22,10 +16,7 @@ pub fn spawn(commands: &mut Commands) -> Entity {
         },
         PlayerCameraMarker,
     );
-    let camera_entity = commands
-        .spawn(camera)
-        .insert(PickingCameraBundle::default())
-        .id();
+    let camera_entity = commands.spawn(camera).id();
 
     commands
         .spawn((
@@ -37,8 +28,8 @@ pub fn spawn(commands: &mut Commands) -> Entity {
         .id()
 }
 
-fn orbit_camera(
-    windows: Res<Windows>,
+pub fn orbit_camera(
+    primary_window: Query<&Window, With<PrimaryWindow>>,
     mut mouse_motion_events: EventReader<MouseMotion>,
     input_mouse: Res<Input<MouseButton>>,
     mut camera_base: Query<&mut Transform, With<CameraBaseNodeMarker>>,
@@ -47,9 +38,12 @@ fn orbit_camera(
     if input_mouse.pressed(MouseButton::Left) || input_mouse.pressed(MouseButton::Right) {
         let mut camera_transform = camera_base.get_single_mut().unwrap();
         let mut player_transform = player.get_single_mut().unwrap();
+        let window = primary_window
+            .get_single()
+            .expect("No primary window found");
 
         let mouse_delta: Vec2 = mouse_motion_events.iter().map(|x| x.delta).sum();
-        let window_size = get_primary_window_size(&windows);
+        let window_size = Vec2::new(window.width(), window.height());
 
         // up down
         let delta_y = mouse_delta.y / window_size.y * std::f32::consts::PI;
@@ -82,7 +76,7 @@ fn orbit_camera(
     }
 }
 
-fn camera_scroll(
+pub fn camera_scroll(
     mut query: Query<&mut Transform, With<PlayerCameraMarker>>,
     mut scroll_events: EventReader<MouseWheel>,
 ) {
@@ -103,9 +97,4 @@ fn camera_scroll(
             camera_transform.translation.z = new_value;
         }
     }
-}
-
-fn get_primary_window_size(windows: &Res<Windows>) -> Vec2 {
-    let window = windows.get_primary().unwrap();
-    Vec2::new(window.width(), window.height())
 }

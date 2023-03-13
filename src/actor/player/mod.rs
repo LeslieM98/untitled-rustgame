@@ -3,22 +3,26 @@ pub mod camera;
 pub mod movement;
 pub mod targeting;
 
+use crate::actor::player::action::player_action;
+use crate::actor::player::camera::{camera_scroll, orbit_camera};
+use crate::actor::player::movement::move_player;
+use crate::actor::player::targeting::{chose_target, deselect_target};
 use crate::actor::*;
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::prelude::*;
-use bevy_mod_picking::{InteractablePickingPlugin, PickingCameraBundle, PickingPlugin};
 
 pub struct PlayerPlugin;
+
+#[derive(SystemSet, Eq, Clone, Copy, PartialEq, Hash, Debug)]
+struct PlayerControlSet;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(animation)
-            .add_system_set(movement::get_system_set())
-            .add_system_set(camera::get_system_set())
-            .add_system_set(targeting::get_system_set())
-            .add_system_set(action::get_system_set())
-            .add_plugin(PickingPlugin)
-            .add_plugin(InteractablePickingPlugin);
+            .add_system(move_player.in_set(PlayerControlSet))
+            .add_systems((orbit_camera, camera_scroll).in_set(PlayerControlSet))
+            // .add_systems((chose_target, deselect_target).in_set(PlayerControlSet)) TODO!
+            .add_system(player_action.in_set(PlayerControlSet));
     }
 }
 

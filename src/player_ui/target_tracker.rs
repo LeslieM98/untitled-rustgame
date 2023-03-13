@@ -9,7 +9,7 @@ pub struct TargetTrackerUIPlugin;
 
 impl Plugin for TargetTrackerUIPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_to_stage(CoreStage::PreUpdate, draw);
+        app.add_system(draw.in_base_set(CoreSet::PreUpdate));
     }
 }
 

@@ -11,12 +11,11 @@ members = ["crates/*"]
 [dependencies]
 stats_and_abilities_system = {path = "crates/stats_and_abilities_system"}
 
-bevy = { version = "0.9.1", features = ["png", "dynamic"] }
-bevy_editor_pls = "0.2"
-bevy_egui = "0.19"
-bevy_mod_picking = "0.11"
-bevy_rapier3d = "0.20"
-leafwing-input-manager = "0.8"
+bevy = "0.10"
+bevy_editor_pls = "0.3" # dont need tbh
+bevy_egui = "0.20"
+bevy_rapier3d = "0.21"
+leafwing-input-manager = "0.9"
 rand = "0.8"
 getset = "0.1.2"
 bincode = "2.0.0-rc.2"

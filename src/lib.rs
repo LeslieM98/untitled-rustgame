@@ -31,16 +31,9 @@ impl Plugin for GameServer {
 
 impl Plugin for GameClient {
     fn build(&self, app: &mut App) {
-        app.add_plugins(DefaultPlugins.set(WindowPlugin {
-            window: WindowDescriptor {
-                title: "Untitled Game".to_string(),
-                present_mode: PresentMode::Immediate,
-                ..default()
-            },
-            ..default()
-        }))
-        .add_plugin(PlayerPlugin)
-        .add_plugin(PlayerUi)
-        .add_plugin(SettingsPlugin);
+        app.add_plugins(DefaultPlugins)
+            .add_plugin(PlayerPlugin)
+            .add_plugin(PlayerUi)
+            .add_plugin(SettingsPlugin);
     }
 }

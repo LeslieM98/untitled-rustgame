@@ -13,7 +13,7 @@ pub struct NamePlateUIHealthBarMarker;
 
 impl Plugin for NamePlateUIPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_to_stage(CoreStage::PreUpdate, clear_ui)
+        app.add_system(clear_ui.in_base_set(CoreSet::PreUpdate))
             .add_system(draw);
     }
 }

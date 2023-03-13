@@ -3,13 +3,7 @@ use crate::settings::controls::MovementAction;
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::ActionState;
 
-pub fn get_system_set() -> SystemSet {
-    SystemSet::new()
-        .label("PlayerMovementSystems")
-        .with_system(move_player)
-}
-
-fn move_player(
+pub fn move_player(
     mut query: Query<&mut Transform, With<PlayerMarker>>,
     inputs: Query<&ActionState<MovementAction>>,
     time: Res<Time>,

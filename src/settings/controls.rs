@@ -5,8 +5,8 @@ pub struct SettingsControlsPlugin;
 
 impl Plugin for SettingsControlsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system_to_stage(StartupStage::PreStartup, init_movement_controls)
-            .add_startup_system_to_stage(StartupStage::PreStartup, init_action_bar_controls)
+        app.add_startup_system(init_movement_controls.in_base_set(StartupSet::PostStartup))
+            .add_startup_system(init_action_bar_controls.in_base_set(StartupSet::PostStartup))
             .add_plugin(InputManagerPlugin::<MovementAction>::default())
             .add_plugin(InputManagerPlugin::<ActionBarAction>::default());
     }

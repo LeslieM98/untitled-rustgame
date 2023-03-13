@@ -7,7 +7,7 @@ pub struct AIPlugin;
 
 impl Plugin for AIPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system_to_stage(StartupStage::PostStartup, init)
+        app.add_system(init.in_base_set(StartupSet::PostStartup))
             .add_system(work_follow_main_task_rotation)
             .add_system(work_move_to_sub_task)
             .add_system(follow_main_task_movement_sub_task_planning);

@@ -4,13 +4,7 @@ use crate::settings::controls::ActionBarAction;
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::ActionState;
 
-pub fn get_system_set() -> SystemSet {
-    SystemSet::new()
-        .label("PlayerActions")
-        .with_system(player_action)
-}
-
-fn player_action(
+pub fn player_action(
     actions: Query<&ActionState<ActionBarAction>>,
     player_queue: Query<(Entity, &Target), With<PlayerMarker>>,
 ) {
