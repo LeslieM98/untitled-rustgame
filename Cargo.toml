@@ -16,6 +16,7 @@ bevy_editor_pls = "0.3" # dont need tbh
 bevy_egui = "0.20"
 bevy_rapier3d = "0.21"
 leafwing-input-manager = "0.9"
+bevy_renet = "0.0.7"
 rand = "0.8"
 getset = "0.1.2"
 bincode = "2.0.0-rc.2"
