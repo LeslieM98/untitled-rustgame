@@ -3583,7 +3583,6 @@ name = "stats_and_abilities_system"
 version = "0.1.0"
 dependencies = [
  "bevy",
- "getset",
 ]
 
 [[package]]

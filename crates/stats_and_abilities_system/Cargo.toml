@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 bevy = "0.10"
-getset = "0.1.2"
 
 
 [profile.dev.package."*"]
