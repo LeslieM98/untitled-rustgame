@@ -43,6 +43,14 @@ impl Health {
     }
 
     pub fn apply_damage(&mut self, event: &DamageEvent) {
-        todo!()
+        if self.current < event.value {
+            self.current = 0;
+        } else {
+            self.current -= event.value;
+        }
+    }
+
+    pub fn is_dead(&self) -> bool {
+        self.current == 0
     }
 }
