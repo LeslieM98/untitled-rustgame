@@ -1,7 +1,5 @@
 #![allow(dead_code)]
-pub mod event_queue;
 pub mod health;
-pub mod ressource;
 pub mod stats;
 
 pub type StatValueType = i32;
