@@ -9,7 +9,6 @@ pub mod settings;
 use crate::actor::npc::EnemyPlugin;
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
-use bevy::window::PresentMode;
 
 use crate::actor::player::*;
 use crate::network::client::ClientPlugin;

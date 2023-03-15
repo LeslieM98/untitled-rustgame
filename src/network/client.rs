@@ -1,12 +1,9 @@
 use crate::network::*;
-use crate::GameServer;
-use bevy_renet::renet::{ClientAuthentication, RenetClient, ServerAuthentication};
+use bevy_renet::renet::{ClientAuthentication, RenetClient};
 use bevy_renet::RenetClientPlugin;
-use bincode::config;
-use std::io::{Read, Write};
-use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream, UdpSocket};
+use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::str::FromStr;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::SystemTime;
 
 pub struct ClientPlugin {
     ip: String,

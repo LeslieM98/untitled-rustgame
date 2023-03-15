@@ -1,5 +1,4 @@
 use bevy::app::App;
-use rust_game::network::client::*;
 use rust_game::GameClient;
 
 fn main() {

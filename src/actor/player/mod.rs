@@ -6,7 +6,6 @@ pub mod targeting;
 use crate::actor::player::action::player_action;
 use crate::actor::player::camera::{camera_scroll, orbit_camera};
 use crate::actor::player::movement::move_player;
-use crate::actor::player::targeting::{chose_target, deselect_target};
 use crate::actor::*;
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::prelude::*;

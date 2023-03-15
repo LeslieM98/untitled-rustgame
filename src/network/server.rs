@@ -55,7 +55,7 @@ impl Plugin for ServerPlugin {
 fn handle_events_system(mut server_events: EventReader<ServerEvent>) {
     for event in server_events.iter() {
         match event {
-            ServerEvent::ClientConnected(id, user_data) => {
+            ServerEvent::ClientConnected(id, _user_data) => {
                 println!("Client {} connected", id);
             }
             ServerEvent::ClientDisconnected(id) => {

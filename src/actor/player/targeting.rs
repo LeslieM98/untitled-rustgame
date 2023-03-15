@@ -1,5 +1,5 @@
 use crate::actor::player::PlayerMarker;
-use crate::actor::target::{Target, Targetable};
+use crate::actor::target::Target;
 use bevy::prelude::*;
 
 pub fn deselect_target(
