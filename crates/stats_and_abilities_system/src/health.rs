@@ -4,8 +4,8 @@ use crate::*;
 
 #[derive(Component, PartialEq)]
 pub struct Health {
-    current: StatValueType,
-    maximum: StatValueType,
+    current: StatUValueType,
+    maximum: StatUValueType,
 }
 
 impl Default for Health {
@@ -15,22 +15,29 @@ impl Default for Health {
 }
 
 impl Health {
-    pub fn new(maximum: StatValueType) -> Self {
+    pub fn new(maximum: StatUValueType) -> Self {
         Self {
             maximum,
             current: maximum,
         }
     }
 
-    pub fn get_health_percentage(&self) -> StatModifierType {
-        todo!()
+    pub fn get_health_percentage(&self) -> StatFloatType {
+        self.current as StatFloatType / self.maximum as StatFloatType
     }
 
-    pub fn current(&self) -> StatValueType {
-        todo!();
+    pub fn current(&self) -> StatUValueType {
+        self.current
     }
 
-    pub fn maximum(&self) -> StatValueType {
-        todo!();
+    pub fn maximum(&self) -> StatUValueType {
+        self.current
+    }
+
+    pub fn update_maximum(&mut self, new_maximum: StatUValueType) {
+        self.maximum = new_maximum;
+        if self.current > new_maximum {
+            self.current = self.maximum;
+        }
     }
 }

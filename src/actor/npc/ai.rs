@@ -1,7 +1,7 @@
 use crate::actor::npc::NPCMarker;
 use crate::actor::player::PlayerMarker;
 use bevy::prelude::*;
-use stats_and_abilities_system::prelude::StatBlock;
+use stats_and_abilities_system::prelude::Stats;
 
 pub struct AIPlugin;
 
@@ -76,7 +76,7 @@ fn follow_main_task_movement_sub_task_planning(
 }
 
 fn work_move_to_sub_task(
-    npc_query: Query<(Entity, &StatBlock, &AIMovementTaskQueue)>,
+    npc_query: Query<(Entity, &Stats, &AIMovementTaskQueue)>,
     mut translation_query: Query<&mut Transform>,
     time: Res<Time>,
 ) {

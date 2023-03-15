@@ -44,7 +44,7 @@ impl Default for PlayerBundle {
 }
 
 pub fn spawn_player(mut commands: Commands, player_model: Handle<Scene>) {
-    let player_stats = StatBlock::default();
+    let player_stats = Stats::default();
     let player_bundle = PlayerBundle {
         actor: Actor {
             stats: player_stats,
