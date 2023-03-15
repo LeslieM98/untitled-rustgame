@@ -1,5 +1,6 @@
 use bevy::prelude::Component;
 
+use crate::events::DamageEvent;
 use crate::*;
 
 #[derive(Component, PartialEq)]
@@ -39,5 +40,9 @@ impl Health {
         if self.current > new_maximum {
             self.current = self.maximum;
         }
+    }
+
+    pub fn apply_damage(&mut self, event: &DamageEvent) {
+        todo!()
     }
 }
