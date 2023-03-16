@@ -3,7 +3,7 @@ use bevy::prelude::Component;
 use crate::events::DamageEvent;
 use crate::*;
 
-#[derive(Component, PartialEq)]
+#[derive(Component, PartialEq, Debug)]
 pub struct Health {
     current: StatUValueType,
     maximum: StatUValueType,
@@ -32,7 +32,7 @@ impl Health {
     }
 
     pub fn maximum(&self) -> StatUValueType {
-        self.current
+        self.maximum
     }
 
     pub fn update_maximum(&mut self, new_maximum: StatUValueType) {
@@ -52,5 +52,36 @@ impl Health {
 
     pub fn is_dead(&self) -> bool {
         self.current == 0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn basic_operation() {
+        let mut subject = Health::default();
+        assert_eq!(subject.current(), 1000);
+        assert_eq!(subject.maximum(), 1000);
+        assert_eq!(subject.get_health_percentage(), 1.0);
+
+        subject.apply_damage(&DamageEvent { value: 500 });
+
+        assert_eq!(subject.current(), 500);
+        assert_eq!(subject.maximum(), 1000);
+        assert_eq!(subject.get_health_percentage(), 0.5);
+
+        subject.update_maximum(800);
+
+        assert_eq!(subject.current(), 500);
+        assert_eq!(subject.maximum(), 800);
+        assert_eq!(subject.get_health_percentage(), 0.625);
+
+        subject.update_maximum(400);
+
+        assert_eq!(subject.current(), 400);
+        assert_eq!(subject.maximum(), 400);
+        assert_eq!(subject.get_health_percentage(), 1.0);
     }
 }
