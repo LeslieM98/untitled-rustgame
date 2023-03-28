@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use rust_game::actor::npc::Enemy;
 use rust_game::debug::DebugPlugin;
-use rust_game::GameClient;
+use rust_game::game_client::GameClient;
 use std::env;
 use std::f32::consts::PI;
 
