@@ -11,7 +11,6 @@ struct DebugScene;
 impl Plugin for DebugScene {
     fn build(&self, app: &mut App) {
         app.add_startup_system(rust_game::load_debug_scene)
-            .add_startup_system(game_client::spawn_player)
             .add_startup_system(spawn_enemies);
     }
 }
