@@ -1,3 +1,6 @@
+use crate::actor;
+use crate::actor::player::{PlayerBundle, PlayerMarker};
+use crate::actor::*;
 use bevy_renet::renet::{RenetServer, ServerAuthentication, ServerConfig, ServerEvent};
 use bevy_renet::RenetServerPlugin;
 use std::net::{IpAddr, SocketAddr, UdpSocket};
@@ -52,13 +55,26 @@ impl Plugin for ServerPlugin {
     }
 }
 
-fn handle_events_system(mut server_events: EventReader<ServerEvent>) {
+fn handle_events_system(
+    mut commands: Commands,
+    mut server_events: EventReader<ServerEvent>,
+    players: Query<(Entity, &actor::Name), With<PlayerMarker>>,
+) {
     for event in server_events.iter() {
         match event {
             ServerEvent::ClientConnected(id, _user_data) => {
+                commands.spawn(
+                    PlayerBundle::default()
+                        .with_name(actor::Name::new(format!("Player_{}", id).into())),
+                );
                 println!("Client {} connected", id);
             }
             ServerEvent::ClientDisconnected(id) => {
+                for (entity, name) in &players {
+                    if name.value.ends_with(&format!("_{}", id)) {
+                        commands.entity(entity).despawn()
+                    }
+                }
                 println!("Client {} disconnected", id);
             }
         }

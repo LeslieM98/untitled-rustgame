@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use rust_game::actor::npc::Enemy;
 use rust_game::debug::DebugPlugin;
+use rust_game::game_client;
 use rust_game::game_client::GameClient;
 use std::env;
 use std::f32::consts::PI;
@@ -9,39 +10,10 @@ struct DebugScene;
 
 impl Plugin for DebugScene {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(load_debug_scene)
-            .add_startup_system(spawn_player)
+        app.add_startup_system(rust_game::load_debug_scene)
+            .add_startup_system(game_client::spawn_player)
             .add_startup_system(spawn_enemies);
     }
-}
-
-fn load_debug_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let my_gltf = asset_server.load("glTF/Debug_Scene.gltf#Scene0");
-    commands.spawn(SceneBundle {
-        scene: my_gltf,
-        transform: Transform::from_xyz(2.0, 0.0, -5.0),
-        ..Default::default()
-    });
-
-    let sun = DirectionalLightBundle {
-        directional_light: DirectionalLight {
-            shadows_enabled: true,
-            ..default()
-        },
-        transform: Transform {
-            translation: Vec3::new(0.0, 2.0, 0.0),
-            rotation: Quat::from_rotation_x(-PI / 4.),
-            ..default()
-        },
-        ..default()
-    };
-
-    commands.spawn(sun);
-}
-
-fn spawn_player(commands: Commands, asset_server: Res<AssetServer>) {
-    let player_model = asset_server.load("glTF/base model/base_model.gltf#Scene0");
-    rust_game::actor::player::spawn_player(commands, player_model);
 }
 
 fn spawn_enemies(

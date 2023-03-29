@@ -32,20 +32,15 @@ impl Default for Relationship {
     }
 }
 
-#[derive(Bundle, Default)]
-pub struct Actor {
-    pub name: Name,
-    pub pbr: PbrBundle,
-    pub stats: Stats,
-    pub health: Health,
-    pub combat_status: CombatStatus,
-    pub target: Target,
-    targetable: Targetable,
-}
-
 #[derive(Component)]
 pub struct Name {
     pub value: String,
+}
+
+impl Name {
+    pub fn new(value: String) -> Name {
+        Name { value }
+    }
 }
 
 impl Default for Name {
@@ -58,4 +53,15 @@ impl Default for Name {
             value: now.to_string(),
         }
     }
+}
+
+#[derive(Bundle, Default)]
+pub struct Actor {
+    pub name: Name,
+    pub pbr: PbrBundle,
+    pub stats: Stats,
+    pub health: Health,
+    pub combat_status: CombatStatus,
+    pub target: Target,
+    targetable: Targetable,
 }

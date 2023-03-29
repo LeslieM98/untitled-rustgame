@@ -47,13 +47,26 @@ impl ClientPlugin {
     }
 }
 
+#[derive(Resource)]
+pub struct ClientID {
+    id: u64,
+}
+
+impl ClientID {
+    pub fn new(id: u64) -> ClientID {
+        ClientID { id }
+    }
+}
+
 impl Plugin for ClientPlugin {
     fn build(&self, app: &mut App) {
+        let renet_client = self.build_renet();
         app.insert_resource(IpResource {
             value: self.ip.clone(),
         })
         .insert_resource(PortResource { value: self.port })
         .add_plugin(RenetClientPlugin::default())
-        .insert_resource(self.build_renet());
+        .insert_resource(ClientID::new(renet_client.client_id()))
+        .insert_resource(renet_client);
     }
 }
