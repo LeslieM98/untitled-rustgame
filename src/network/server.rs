@@ -1,6 +1,7 @@
 use crate::actor;
 use crate::actor::player::{PlayerBundle, PlayerMarker};
 use crate::actor::*;
+use bevy::utils::{HashMap, HashSet};
 use bevy_renet::renet::{RenetServer, ServerAuthentication, ServerConfig, ServerEvent};
 use bevy_renet::RenetServerPlugin;
 use std::net::{IpAddr, SocketAddr, UdpSocket};
@@ -8,6 +9,8 @@ use std::str::FromStr;
 use std::time::SystemTime;
 
 use crate::network::*;
+
+pub const MAX_CONNECTIONS: usize = 5;
 
 pub struct ServerPlugin {
     ip: String,
@@ -30,7 +33,12 @@ impl ServerPlugin {
     }
 
     pub fn get_server_config(&self) -> ServerConfig {
-        ServerConfig::new(5, 0, self.get_socket_addr(), ServerAuthentication::Unsecure)
+        ServerConfig::new(
+            MAX_CONNECTIONS,
+            0,
+            self.get_socket_addr(),
+            ServerAuthentication::Unsecure,
+        )
     }
 
     pub fn create_server(&self) -> RenetServer {
@@ -50,31 +58,44 @@ impl Plugin for ServerPlugin {
         })
         .insert_resource(PortResource { value: self.port })
         .insert_resource(self.create_server())
+        .insert_resource(Lobby::default())
         .add_plugin(RenetServerPlugin::default())
         .add_system(handle_events_system);
     }
 }
 
+#[derive(Resource, Default)]
+struct Lobby {
+    ids: HashMap<u64, Entity>,
+}
+
+#[derive(Component)]
+struct ClientID {
+    id: u64,
+}
+
 fn handle_events_system(
     mut commands: Commands,
     mut server_events: EventReader<ServerEvent>,
-    players: Query<(Entity, &actor::Name), With<PlayerMarker>>,
+    mut lobby: ResMut<Lobby>,
 ) {
     for event in server_events.iter() {
         match event {
             ServerEvent::ClientConnected(id, _user_data) => {
-                commands.spawn(
-                    PlayerBundle::default()
-                        .with_name(actor::Name::new(format!("Player_{}", id).into())),
-                );
+                let entity = commands
+                    .spawn(
+                        PlayerBundle::default()
+                            .with_name(actor::Name::new(format!("Player_{}", id).into())),
+                    )
+                    .insert(ClientID { id: *id })
+                    .id();
+                lobby.ids.insert(*id, entity);
+
                 println!("Client {} connected", id);
             }
             ServerEvent::ClientDisconnected(id) => {
-                for (entity, name) in &players {
-                    if name.value.ends_with(&format!("_{}", id)) {
-                        commands.entity(entity).despawn()
-                    }
-                }
+                let entity = lobby.ids.remove(id).expect("Client not connected");
+                commands.entity(entity).despawn();
                 println!("Client {} disconnected", id);
             }
         }

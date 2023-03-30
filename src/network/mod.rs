@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 pub mod client;
+pub mod packets;
 pub mod server;
 
 type PlayerIdentifier = usize;
