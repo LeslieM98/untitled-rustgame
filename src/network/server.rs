@@ -1,13 +1,13 @@
-use crate::actor;
-use crate::actor::player::PlayerBundle;
-use bevy::utils::HashMap;
 use bevy_renet::renet::{RenetServer, ServerAuthentication, ServerConfig, ServerEvent};
 use bevy_renet::RenetServerPlugin;
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::str::FromStr;
 use std::time::SystemTime;
 
+use crate::network::lobby::LobbyServerPlugin;
 use crate::network::*;
+
+use super::lobby::Lobby;
 
 pub const MAX_CONNECTIONS: usize = 5;
 
@@ -57,20 +57,10 @@ impl Plugin for ServerPlugin {
         })
         .insert_resource(PortResource { value: self.port })
         .insert_resource(self.create_server())
-        .insert_resource(Lobby::default())
         .add_plugin(RenetServerPlugin::default())
+        .add_plugin(LobbyServerPlugin::default())
         .add_system(handle_events_system);
     }
-}
-
-#[derive(Resource, Default)]
-struct Lobby {
-    ids: HashMap<u64, Entity>,
-}
-
-#[derive(Component)]
-struct ClientID {
-    id: u64,
 }
 
 fn handle_events_system(
@@ -81,22 +71,9 @@ fn handle_events_system(
     for event in server_events.iter() {
         match event {
             ServerEvent::ClientConnected(id, _user_data) => {
-                let entity = commands
-                    .spawn(
-                        PlayerBundle::default()
-                            .with_name(actor::Name::new(format!("Player_{}", id).into())),
-                    )
-                    .insert(ClientID { id: *id })
-                    .id();
-                lobby.ids.insert(*id, entity);
-
-                println!("Client {} connected", id);
+                lobby.register_client(*id, &mut commands);
             }
-            ServerEvent::ClientDisconnected(id) => {
-                let entity = lobby.ids.remove(id).expect("Client not connected");
-                commands.entity(entity).despawn();
-                println!("Client {} disconnected", id);
-            }
+            ServerEvent::ClientDisconnected(id) => lobby.unregister_client(*id, &mut commands),
         }
     }
 }

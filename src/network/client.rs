@@ -1,3 +1,4 @@
+use crate::network::lobby::LobbyClientPlugin;
 use crate::network::*;
 use bevy_renet::renet::{ClientAuthentication, RenetClient};
 use bevy_renet::RenetClientPlugin;
@@ -67,6 +68,7 @@ impl Plugin for ClientPlugin {
         .insert_resource(PortResource { value: self.port })
         .add_plugin(RenetClientPlugin::default())
         .insert_resource(ClientID::new(renet_client.client_id()))
-        .insert_resource(renet_client);
+        .insert_resource(renet_client)
+        .add_plugin(LobbyClientPlugin::default());
     }
 }

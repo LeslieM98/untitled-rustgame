@@ -1,8 +1,47 @@
 use crate::network::server::MAX_CONNECTIONS;
-use bevy::prelude::{Commands, Entity, Resource};
+use bevy::prelude::*;
 use bevy::utils::HashMap;
+use bevy_renet::renet::{RenetClient, RenetServer};
+
+use bincode::*;
 
 type SpawnFunction = Box<dyn Fn(&mut Commands, u64) -> Entity + Send + Sync>;
+
+#[derive(Default)]
+pub struct LobbyClientPlugin;
+
+impl Plugin for LobbyClientPlugin {
+    fn build(&self, app: &mut App) {
+        let lobby = Lobby::new(Box::new(|_, _| todo!()));
+        app.insert_resource(lobby).add_system(receive_sync);
+    }
+}
+
+#[derive(Default)]
+pub struct LobbyServerPlugin;
+
+impl Plugin for LobbyServerPlugin {
+    fn build(&self, app: &mut App) {
+        let lobby = Lobby::new(Box::new(|_, _| todo!()));
+        app.insert_resource(lobby)
+            .add_system(send_sync.run_if(|lobby: Res<Lobby>| lobby.is_changed()));
+    }
+}
+
+fn send_sync(mut server: ResMut<RenetServer>, lobby: Res<Lobby>) {
+    let sync = lobby.generate_sync_package();
+    let payload = bincode::encode_to_vec(sync, config::standard()).unwrap();
+    server.broadcast_message(0, payload);
+}
+
+fn receive_sync(mut client: ResMut<RenetClient>, mut lobby: ResMut<Lobby>, mut commands: Commands) {
+    let sync = client.receive_message(0);
+    if let Some(data) = sync {
+        let (packet, _size) =
+            bincode::decode_from_slice(data.as_slice(), config::standard()).unwrap();
+        lobby.apply_sync_package(&packet, &mut commands);
+    }
+}
 
 #[derive(Resource)]
 pub struct Lobby {
@@ -10,6 +49,7 @@ pub struct Lobby {
     spawn_player: SpawnFunction,
 }
 
+#[derive(Encode, Decode)]
 pub struct SyncConnectedPlayersPackage {
     ids: [Option<u64>; MAX_CONNECTIONS],
 }
@@ -29,13 +69,13 @@ impl Lobby {
         }
     }
 
-    fn register_client(&mut self, client_id: u64, commands: &mut Commands) -> Entity {
+    pub fn register_client(&mut self, client_id: u64, commands: &mut Commands) -> Entity {
         let entity = (self.spawn_player)(commands, client_id);
         self.player_ids.insert(client_id, entity);
         return *self.player_ids.get(&client_id).unwrap();
     }
 
-    fn unregister_client(&mut self, client_id: u64, commands: &mut Commands) {
+    pub fn unregister_client(&mut self, client_id: u64, commands: &mut Commands) {
         let entity = self.player_ids.remove(&client_id);
         entity.iter().for_each(|x| commands.entity(*x).despawn());
     }
