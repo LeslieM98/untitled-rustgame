@@ -51,13 +51,13 @@ impl Lobby {
 
     fn handle_disconnected_players(
         &mut self,
-        payload: &[Option<u64>; MAX_CONNECTIONS],
+        payload: &SyncConnectedPlayersPackage,
         commands: &mut Commands,
     ) {
         let disconnected_players: Vec<u64> = self
             .player_ids
             .iter()
-            .filter(|(x, _)| !payload.contains(&Some(**x)))
+            .filter(|(x, _)| !payload.ids.contains(&Some(**x)))
             .map(|(x, _)| *x)
             .collect();
 
@@ -72,10 +72,11 @@ impl Lobby {
 
     fn handle_newly_connected_players(
         &mut self,
-        payload: &[Option<u64>; MAX_CONNECTIONS],
+        payload: &SyncConnectedPlayersPackage,
         mut commands: &mut Commands,
     ) {
         let newly_connected_players: Vec<&u64> = payload
+            .ids
             .iter()
             .flatten()
             .filter(|x| !self.player_ids.contains_key(x))
@@ -89,8 +90,8 @@ impl Lobby {
 
     pub fn apply_sync_package(
         &mut self,
-        payload: &[Option<u64>; MAX_CONNECTIONS],
-        mut commands: &mut Commands,
+        payload: &SyncConnectedPlayersPackage,
+        commands: &mut Commands,
     ) {
         self.handle_disconnected_players(payload, commands);
         self.handle_newly_connected_players(payload, commands);
@@ -177,7 +178,7 @@ mod tests {
         }
 
         let sync_package = server_lobby.generate_sync_package();
-        client_lobby.apply_sync_package(&sync_package.ids, &mut commands);
+        client_lobby.apply_sync_package(&sync_package, &mut commands);
 
         unsafe {
             assert_eq!(1, SERVER_COUNTER);
@@ -187,7 +188,7 @@ mod tests {
         }
 
         let sync_package = server_lobby.generate_sync_package();
-        client_lobby.apply_sync_package(&sync_package.ids, &mut commands);
+        client_lobby.apply_sync_package(&sync_package, &mut commands);
 
         unsafe {
             assert_eq!(1, SERVER_COUNTER);
@@ -206,7 +207,7 @@ mod tests {
         }
 
         let sync_package = server_lobby.generate_sync_package();
-        client_lobby.apply_sync_package(&sync_package.ids, &mut commands);
+        client_lobby.apply_sync_package(&sync_package, &mut commands);
 
         unsafe {
             assert_eq!(2, SERVER_COUNTER);
@@ -251,10 +252,8 @@ mod tests {
         assert_eq!(2, server_lobby.player_ids.len());
         assert_eq!(3, client_lobby.player_ids.len());
 
-        client_lobby.apply_sync_package(
-            &server_lobby.generate_sync_package().ids,
-            &mut server_commands,
-        );
+        client_lobby
+            .apply_sync_package(&server_lobby.generate_sync_package(), &mut server_commands);
 
         assert_eq!(2, server_lobby.player_ids.len());
         assert_eq!(2, client_lobby.player_ids.len());
