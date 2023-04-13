@@ -79,6 +79,7 @@ fn handle_events_system(
     for event in server_events.iter() {
         match event {
             ServerEvent::ClientConnected(id, _user_data) => {
+                info!("Client connected");
                 client_connected_events.send(ClientConnectedEvent { id: *id });
             }
             ServerEvent::ClientDisconnected(id) => {

@@ -33,8 +33,7 @@ impl Plugin for LobbyServerPlugin {
             warn!("IMPLEMENT THIS SERVER LOBBY SPAWNER");
             return Entity::from_bits(0);
         }));
-        app.insert_resource(lobby)
-            .add_system(send_sync.run_if(|lobby: Res<Lobby>| lobby.is_changed()));
+        app.insert_resource(lobby).add_system(send_sync);
     }
 }
 
@@ -45,12 +44,17 @@ fn send_sync(
     mut commands: Commands,
 ) {
     if !client_connected.is_empty() {
+        let mut newly_connected_clients = Vec::new();
         for event in client_connected.iter() {
+            newly_connected_clients.push(event.id);
             lobby.register_client(event.id, &mut commands);
         }
         let sync = lobby.generate_sync_package();
         let payload = bincode::encode_to_vec(sync, config::standard()).unwrap();
         server.broadcast_message(0, payload);
+        for id in newly_connected_clients {
+            info!("Client {} connected", id);
+        }
     }
 }
 
