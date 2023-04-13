@@ -7,9 +7,15 @@ use std::time::SystemTime;
 use crate::network::lobby::LobbyServerPlugin;
 use crate::network::*;
 
-use super::lobby::Lobby;
-
 pub const MAX_CONNECTIONS: usize = 5;
+
+pub struct ClientConnectedEvent {
+    pub id: u64,
+}
+
+pub struct ClientDisconnectedEvent {
+    pub id: u64,
+}
 
 pub struct ServerPlugin {
     ip: String,
@@ -57,6 +63,8 @@ impl Plugin for ServerPlugin {
         })
         .insert_resource(PortResource { value: self.port })
         .insert_resource(self.create_server())
+        .add_event::<ClientConnectedEvent>()
+        .add_event::<ClientDisconnectedEvent>()
         .add_plugin(RenetServerPlugin::default())
         .add_plugin(LobbyServerPlugin::default())
         .add_system(handle_events_system);
@@ -64,16 +72,18 @@ impl Plugin for ServerPlugin {
 }
 
 fn handle_events_system(
-    mut commands: Commands,
     mut server_events: EventReader<ServerEvent>,
-    mut lobby: ResMut<Lobby>,
+    mut client_connected_events: EventWriter<ClientConnectedEvent>,
+    mut client_disconnected_events: EventWriter<ClientDisconnectedEvent>,
 ) {
     for event in server_events.iter() {
         match event {
             ServerEvent::ClientConnected(id, _user_data) => {
-                lobby.register_client(*id, &mut commands);
+                client_connected_events.send(ClientConnectedEvent { id: *id });
             }
-            ServerEvent::ClientDisconnected(id) => lobby.unregister_client(*id, &mut commands),
+            ServerEvent::ClientDisconnected(id) => {
+                client_disconnected_events.send(ClientDisconnectedEvent { id: *id })
+            }
         }
     }
 }

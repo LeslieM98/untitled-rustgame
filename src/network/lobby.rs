@@ -5,6 +5,10 @@ use bevy_renet::renet::{RenetClient, RenetServer};
 
 use bincode::*;
 
+use crate::network::client::ClientID;
+
+use super::server::ClientConnectedEvent;
+
 type SpawnFunction = Box<dyn Fn(&mut Commands, u64) -> Entity + Send + Sync>;
 
 #[derive(Default)]
@@ -34,19 +38,38 @@ impl Plugin for LobbyServerPlugin {
     }
 }
 
-fn send_sync(mut server: ResMut<RenetServer>, lobby: Res<Lobby>) {
-    let sync = lobby.generate_sync_package();
-    let payload = bincode::encode_to_vec(sync, config::standard()).unwrap();
-    server.broadcast_message(0, payload);
+fn send_sync(
+    mut server: ResMut<RenetServer>,
+    mut lobby: ResMut<Lobby>,
+    mut client_connected: EventReader<ClientConnectedEvent>,
+    mut commands: Commands,
+) {
+    if !client_connected.is_empty() {
+        for event in client_connected.iter() {
+            lobby.register_client(event.id, &mut commands);
+        }
+        let sync = lobby.generate_sync_package();
+        let payload = bincode::encode_to_vec(sync, config::standard()).unwrap();
+        server.broadcast_message(0, payload);
+    }
 }
 
-fn receive_sync(mut client: ResMut<RenetClient>, mut lobby: ResMut<Lobby>, mut commands: Commands) {
+fn receive_sync(
+    mut client: ResMut<RenetClient>,
+    mut lobby: ResMut<Lobby>,
+    mut commands: Commands,
+    client_id: Res<ClientID>,
+) {
     let sync = client.receive_message(0);
     if let Some(data) = sync {
         let (packet, _size) =
             bincode::decode_from_slice(data.as_slice(), config::standard()).unwrap();
-        lobby.apply_sync_package(&packet, &mut commands);
+        lobby.apply_sync_package(&packet, &mut commands, &client_id.id);
     }
+}
+
+struct PlayerConnectedEvent {
+    id: u64,
 }
 
 #[derive(Resource)]
@@ -119,6 +142,7 @@ impl Lobby {
     fn handle_newly_connected_players(
         &mut self,
         payload: &SyncConnectedPlayersPackage,
+        current_client_id: &u64,
         mut commands: &mut Commands,
     ) {
         let newly_connected_players: Vec<&u64> = payload
@@ -129,8 +153,10 @@ impl Lobby {
             .collect();
 
         for player in newly_connected_players {
-            let entity = (self.spawn_player)(&mut commands, *player);
-            self.player_ids.insert(*player, entity);
+            if player != current_client_id {
+                let entity = (self.spawn_player)(&mut commands, *player);
+                self.player_ids.insert(*player, entity);
+            }
         }
     }
 
@@ -138,9 +164,10 @@ impl Lobby {
         &mut self,
         payload: &SyncConnectedPlayersPackage,
         commands: &mut Commands,
+        current_client_id: &u64,
     ) {
         self.handle_disconnected_players(payload, commands);
-        self.handle_newly_connected_players(payload, commands);
+        self.handle_newly_connected_players(payload, current_client_id, commands);
     }
 }
 
@@ -224,7 +251,7 @@ mod tests {
         }
 
         let sync_package = server_lobby.generate_sync_package();
-        client_lobby.apply_sync_package(&sync_package, &mut commands);
+        client_lobby.apply_sync_package(&sync_package, &mut commands, &999999);
 
         unsafe {
             assert_eq!(1, SERVER_COUNTER);
@@ -234,7 +261,7 @@ mod tests {
         }
 
         let sync_package = server_lobby.generate_sync_package();
-        client_lobby.apply_sync_package(&sync_package, &mut commands);
+        client_lobby.apply_sync_package(&sync_package, &mut commands, &99999);
 
         unsafe {
             assert_eq!(1, SERVER_COUNTER);
@@ -253,7 +280,7 @@ mod tests {
         }
 
         let sync_package = server_lobby.generate_sync_package();
-        client_lobby.apply_sync_package(&sync_package, &mut commands);
+        client_lobby.apply_sync_package(&sync_package, &mut commands, &9999);
 
         unsafe {
             assert_eq!(2, SERVER_COUNTER);
@@ -298,8 +325,11 @@ mod tests {
         assert_eq!(2, server_lobby.player_ids.len());
         assert_eq!(3, client_lobby.player_ids.len());
 
-        client_lobby
-            .apply_sync_package(&server_lobby.generate_sync_package(), &mut server_commands);
+        client_lobby.apply_sync_package(
+            &server_lobby.generate_sync_package(),
+            &mut server_commands,
+            &99999,
+        );
 
         assert_eq!(2, server_lobby.player_ids.len());
         assert_eq!(2, client_lobby.player_ids.len());
