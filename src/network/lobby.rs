@@ -12,7 +12,10 @@ pub struct LobbyClientPlugin;
 
 impl Plugin for LobbyClientPlugin {
     fn build(&self, app: &mut App) {
-        let lobby = Lobby::new(Box::new(|_, _| todo!()));
+        let lobby = Lobby::new(Box::new(|_, _| {
+            warn!("IMPLEMENT THIS CLIENT LOBBY SPAWNER");
+            return Entity::from_bits(0);
+        }));
         app.insert_resource(lobby).add_system(receive_sync);
     }
 }
@@ -22,7 +25,10 @@ pub struct LobbyServerPlugin;
 
 impl Plugin for LobbyServerPlugin {
     fn build(&self, app: &mut App) {
-        let lobby = Lobby::new(Box::new(|_, _| todo!()));
+        let lobby = Lobby::new(Box::new(|_, _| {
+            warn!("IMPLEMENT THIS SERVER LOBBY SPAWNER");
+            return Entity::from_bits(0);
+        }));
         app.insert_resource(lobby)
             .add_system(send_sync.run_if(|lobby: Res<Lobby>| lobby.is_changed()));
     }
