@@ -1,13 +1,13 @@
-use crate::network::server::MAX_CONNECTIONS;
 use bevy::prelude::*;
 use bevy::utils::HashMap;
 use bevy_renet::renet::{RenetClient, RenetServer};
-
 use bincode::*;
 
 use crate::network::client::ClientID;
-
+use crate::network::server::MAX_CONNECTIONS;
 use crate::network::server::{ClientConnectedEvent, ClientDisconnectedEvent};
+
+use super::renet_config::RenetChannel;
 
 type SpawnFunction = Box<dyn Fn(&mut Commands, u64) -> Entity + Send + Sync>;
 
@@ -62,7 +62,7 @@ fn send_sync(
 
     let sync = lobby.generate_sync_package();
     let payload = bincode::encode_to_vec(sync, config::standard()).unwrap();
-    server.broadcast_message(0, payload);
+    server.broadcast_message(RenetChannel::LobbySync, payload);
 }
 
 fn receive_sync(
@@ -71,7 +71,7 @@ fn receive_sync(
     mut commands: Commands,
     client_id: Res<ClientID>,
 ) {
-    let sync = client.receive_message(0);
+    let sync = client.receive_message(RenetChannel::LobbySync);
     if let Some(data) = sync {
         let (packet, _size) =
             bincode::decode_from_slice(data.as_slice(), config::standard()).unwrap();
