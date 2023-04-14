@@ -4,7 +4,7 @@ use bevy_renet::renet::{ClientAuthentication, RenetClient};
 use bevy_renet::RenetClientPlugin;
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::str::FromStr;
-use std::time::SystemTime;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub struct ClientPlugin {
     ip: String,
@@ -39,7 +39,10 @@ impl ClientPlugin {
             Default::default(),
             ClientAuthentication::Unsecure {
                 protocol_id: 0,
-                client_id: 0,
+                client_id: SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .expect("Time went backwards")
+                    .as_secs(),
                 server_addr: addr,
                 user_data: None,
             },

@@ -7,7 +7,7 @@ use bincode::*;
 
 use crate::network::client::ClientID;
 
-use super::server::ClientConnectedEvent;
+use crate::network::server::{ClientConnectedEvent, ClientDisconnectedEvent};
 
 type SpawnFunction = Box<dyn Fn(&mut Commands, u64) -> Entity + Send + Sync>;
 
@@ -16,9 +16,9 @@ pub struct LobbyClientPlugin;
 
 impl Plugin for LobbyClientPlugin {
     fn build(&self, app: &mut App) {
-        let lobby = Lobby::new(Box::new(|_, _| {
+        let lobby = Lobby::new(Box::new(|commands, _client_id| {
             warn!("IMPLEMENT THIS CLIENT LOBBY SPAWNER");
-            return Entity::from_bits(0);
+            commands.spawn(VisibilityBundle::default()).id()
         }));
         app.insert_resource(lobby).add_system(receive_sync);
     }
@@ -29,11 +29,17 @@ pub struct LobbyServerPlugin;
 
 impl Plugin for LobbyServerPlugin {
     fn build(&self, app: &mut App) {
-        let lobby = Lobby::new(Box::new(|_, _| {
+        let lobby = Lobby::new(Box::new(|commands, _client_id| {
             warn!("IMPLEMENT THIS SERVER LOBBY SPAWNER");
-            return Entity::from_bits(0);
+            commands.spawn(VisibilityBundle::default()).id()
         }));
-        app.insert_resource(lobby).add_system(send_sync);
+        app.insert_resource(lobby);
+        app.add_system(send_sync.run_if(
+            |client_connected: EventReader<ClientConnectedEvent>,
+             client_disconnected: EventReader<ClientDisconnectedEvent>| {
+                !client_connected.is_empty() || !client_disconnected.is_empty()
+            },
+        ));
     }
 }
 
@@ -41,21 +47,22 @@ fn send_sync(
     mut server: ResMut<RenetServer>,
     mut lobby: ResMut<Lobby>,
     mut client_connected: EventReader<ClientConnectedEvent>,
+    mut client_disconnected: EventReader<ClientDisconnectedEvent>,
     mut commands: Commands,
 ) {
-    if !client_connected.is_empty() {
-        let mut newly_connected_clients = Vec::new();
-        for event in client_connected.iter() {
-            newly_connected_clients.push(event.id);
-            lobby.register_client(event.id, &mut commands);
-        }
-        let sync = lobby.generate_sync_package();
-        let payload = bincode::encode_to_vec(sync, config::standard()).unwrap();
-        server.broadcast_message(0, payload);
-        for id in newly_connected_clients {
-            info!("Client {} connected", id);
-        }
+    for event in client_connected.iter() {
+        lobby.register_client(event.id, &mut commands);
+        info!("Client {} connected", event.id);
     }
+
+    for event in client_disconnected.iter() {
+        lobby.unregister_client(event.id, &mut commands);
+        info!("Client {} disconnected", event.id);
+    }
+
+    let sync = lobby.generate_sync_package();
+    let payload = bincode::encode_to_vec(sync, config::standard()).unwrap();
+    server.broadcast_message(0, payload);
 }
 
 fn receive_sync(
@@ -104,6 +111,7 @@ impl Lobby {
 
     pub fn register_client(&mut self, client_id: u64, commands: &mut Commands) -> Entity {
         let entity = (self.spawn_player)(commands, client_id);
+        info!("Spawned Client {}", client_id);
         self.player_ids.insert(client_id, entity);
         return *self.player_ids.get(&client_id).unwrap();
     }
@@ -140,6 +148,7 @@ impl Lobby {
                 .despawn();
 
             self.player_ids.remove(&disconnected_player);
+            info!("Despawned Client {}", &disconnected_player);
         }
     }
 
@@ -159,6 +168,7 @@ impl Lobby {
         for player in newly_connected_players {
             if player != current_client_id {
                 let entity = (self.spawn_player)(&mut commands, *player);
+                info!("Spawned Client {}", player);
                 self.player_ids.insert(*player, entity);
             }
         }
