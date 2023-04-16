@@ -7,6 +7,7 @@ use crate::network::client::ClientID;
 use crate::network::server::MAX_CONNECTIONS;
 use crate::network::server::{ClientConnectedEvent, ClientDisconnectedEvent};
 
+use super::remote_player::spawn_remote_player;
 use super::renet_config::RenetChannel;
 
 type SpawnFunction = Box<dyn Fn(&mut Commands, u64) -> Entity + Send + Sync>;
@@ -16,10 +17,7 @@ pub struct LobbyClientPlugin;
 
 impl Plugin for LobbyClientPlugin {
     fn build(&self, app: &mut App) {
-        let lobby = Lobby::new(Box::new(|commands, _client_id| {
-            warn!("IMPLEMENT THIS CLIENT LOBBY SPAWNER");
-            commands.spawn(VisibilityBundle::default()).id()
-        }));
+        let lobby = Lobby::new(Box::new(spawn_remote_player));
         app.insert_resource(lobby).add_system(receive_sync);
     }
 }
@@ -29,10 +27,7 @@ pub struct LobbyServerPlugin;
 
 impl Plugin for LobbyServerPlugin {
     fn build(&self, app: &mut App) {
-        let lobby = Lobby::new(Box::new(|commands, _client_id| {
-            warn!("IMPLEMENT THIS SERVER LOBBY SPAWNER");
-            commands.spawn(VisibilityBundle::default()).id()
-        }));
+        let lobby = Lobby::new(Box::new(spawn_remote_player));
         app.insert_resource(lobby);
         app.add_system(send_sync.run_if(
             |client_connected: EventReader<ClientConnectedEvent>,
@@ -111,7 +106,6 @@ impl Lobby {
 
     pub fn register_client(&mut self, client_id: u64, commands: &mut Commands) -> Entity {
         let entity = (self.spawn_player)(commands, client_id);
-        info!("Spawned Client {}", client_id);
         self.player_ids.insert(client_id, entity);
         return *self.player_ids.get(&client_id).unwrap();
     }

@@ -1,6 +1,7 @@
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RenetChannel {
     LobbySync = 0,
+    PlayerToServerSync = 1,
 }
 
 impl Into<u8> for RenetChannel {
