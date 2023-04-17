@@ -1,6 +1,4 @@
-use bevy::prelude::{
-    info, Commands, Component, Entity, Quat, Query, ResMut, Transform, Vec3, With,
-};
+use bevy::prelude::{info, Commands, Component, Entity, Query, ResMut, Transform, With};
 use bevy::reflect::erased_serde::__private::serde::{Deserialize, Serialize};
 use bevy_renet::renet::RenetClient;
 
@@ -20,11 +18,11 @@ impl PlayerID {
 }
 
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
-struct PlayerUpdatePacket {
+struct SinglePlayerUpdate {
     transform: Transform,
 }
 
-impl PlayerUpdatePacket {
+impl SinglePlayerUpdate {
     pub fn new(transform: Transform) -> Self {
         Self { transform }
     }
@@ -47,7 +45,7 @@ fn sync_player_to_server(
         .get_single()
         .expect("Player character not found");
 
-    let player_update = PlayerUpdatePacket {
+    let player_update = SinglePlayerUpdate {
         transform: *transform,
     };
 
@@ -69,7 +67,7 @@ mod tests {
             scale: Vec3::new(1.0, 2.0, 3.0),
             rotation: Quat::from_euler(EulerRot::XYZ, 432.0, 756.0, 1423.0),
         };
-        let initial = PlayerUpdatePacket::new(transform);
+        let initial = SinglePlayerUpdate::new(transform);
 
         let data = bincode::serialize(&initial).unwrap();
 
