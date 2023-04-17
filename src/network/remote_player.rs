@@ -3,10 +3,11 @@ use bevy::reflect::erased_serde::__private::serde::{Deserialize, Serialize};
 use bevy_renet::renet::RenetClient;
 
 use crate::actor::{player::PlayerMarker, Actor};
+use crate::network::server::MAX_CONNECTIONS;
 
 use super::renet_config::RenetChannel;
 
-#[derive(Component)]
+#[derive(Component, Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 struct PlayerID {
     id: u64,
 }
@@ -25,6 +26,19 @@ struct SinglePlayerUpdate {
 impl SinglePlayerUpdate {
     pub fn new(transform: Transform) -> Self {
         Self { transform }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
+struct MultiplePlayerUpdate {
+    content: [Option<(PlayerID, SinglePlayerUpdate)>; MAX_CONNECTIONS],
+}
+
+impl MultiplePlayerUpdate {
+    pub fn new(
+        content: [Option<(PlayerID, SinglePlayerUpdate)>; MAX_CONNECTIONS],
+    ) -> MultiplePlayerUpdate {
+        Self { content }
     }
 }
 
@@ -60,19 +74,65 @@ mod tests {
 
     use super::*;
 
+    fn generate_random_single_player_update() -> SinglePlayerUpdate {
+        SinglePlayerUpdate::new(Transform {
+            translation: Vec3::new(rand::random(), rand::random(), rand::random()),
+            rotation: Quat::from_array([
+                rand::random(),
+                rand::random(),
+                rand::random(),
+                rand::random(),
+            ]),
+            scale: Vec3::new(rand::random(), rand::random(), rand::random()),
+        })
+    }
+
+    fn generate_random_multiple_player_update_data(
+    ) -> [Option<(PlayerID, SinglePlayerUpdate)>; MAX_CONNECTIONS] {
+        let mut data = [None; MAX_CONNECTIONS];
+        for i in 0..MAX_CONNECTIONS {
+            data[i] = Some((
+                PlayerID::new(i.try_into().unwrap()),
+                generate_random_single_player_update(),
+            ));
+        }
+        data
+    }
+
     #[test]
     fn correct_player_to_server_sync_encoding() {
-        let transform = Transform {
-            translation: Vec3::new(123.0, 444.0, 420.0),
-            scale: Vec3::new(1.0, 2.0, 3.0),
-            rotation: Quat::from_euler(EulerRot::XYZ, 432.0, 756.0, 1423.0),
-        };
-        let initial = SinglePlayerUpdate::new(transform);
+        let initial = generate_random_single_player_update();
 
         let data = bincode::serialize(&initial).unwrap();
 
         let subject = bincode::deserialize(&data).unwrap();
 
         assert_eq!(initial, subject);
+    }
+
+    fn correct_server_to_player_sync_encoding() {
+        let mut data = generate_random_multiple_player_update_data();
+
+        let subject = MultiplePlayerUpdate::new(data.clone());
+        let serialized = bincode::serialize(&subject).unwrap();
+        let deserialized = bincode::deserialize(&serialized).unwrap();
+        assert_eq!(subject, deserialized);
+
+        data[0] = None;
+        data[data.len() - 1] = None;
+
+        let subject = MultiplePlayerUpdate::new(data.clone());
+        let serialized = bincode::serialize(&subject).unwrap();
+        let deserialized = bincode::deserialize(&serialized).unwrap();
+        assert_eq!(subject, deserialized);
+
+        for x in &mut data {
+            *x = None;
+        }
+
+        let subject = MultiplePlayerUpdate::new(data.clone());
+        let serialized = bincode::serialize(&subject).unwrap();
+        let deserialized = bincode::deserialize(&serialized).unwrap();
+        assert_eq!(subject, deserialized);
     }
 }
