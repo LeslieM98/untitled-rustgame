@@ -70,7 +70,7 @@ fn sync_player_to_server(
 
 #[cfg(test)]
 mod tests {
-    use bevy::prelude::{EulerRot, Quat, Vec3};
+    use bevy::prelude::{Quat, Vec3};
 
     use super::*;
 
