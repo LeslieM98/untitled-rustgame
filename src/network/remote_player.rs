@@ -1,11 +1,32 @@
-use bevy::prelude::{info, Commands, Component, Entity, Query, ResMut, Transform, With};
+use bevy::app::App;
+use bevy::log::warn;
+use bevy::prelude::{
+    info, Commands, Component, Entity, Plugin, Query, Res, ResMut, Transform, With,
+};
 use bevy::reflect::erased_serde::__private::serde::{Deserialize, Serialize};
-use bevy_renet::renet::RenetClient;
+use bevy_renet::renet::{RenetClient, RenetServer};
 
 use crate::actor::{player::PlayerMarker, Actor};
+use crate::network::lobby::Lobby;
 use crate::network::server::MAX_CONNECTIONS;
 
 use super::renet_config::RenetChannel;
+
+pub struct ClientPlayerSyncPlugin;
+
+impl Plugin for ClientPlayerSyncPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_system(send_player_to_server_sync);
+    }
+}
+
+pub struct ServerPlayerSyncPlugin;
+
+impl Plugin for ServerPlayerSyncPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_system(receive_player_to_server_sync);
+    }
+}
 
 #[derive(Component, Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 struct PlayerID {
@@ -42,6 +63,12 @@ impl MultiplePlayerUpdate {
     }
 }
 
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
+enum PlayerSyncPacket {
+    ServerToClient(MultiplePlayerUpdate),
+    ClientToServer(SinglePlayerUpdate),
+}
+
 pub fn spawn_remote_player(commands: &mut Commands, client_id: u64) -> Entity {
     info!("Spawning client {}", client_id);
     let remote_player = Actor::default();
@@ -51,7 +78,7 @@ pub fn spawn_remote_player(commands: &mut Commands, client_id: u64) -> Entity {
         .id()
 }
 
-fn sync_player_to_server(
+fn send_player_to_server_sync(
     player_transform_query: Query<&Transform, With<PlayerMarker>>,
     mut client: ResMut<RenetClient>,
 ) {
@@ -59,13 +86,34 @@ fn sync_player_to_server(
         .get_single()
         .expect("Player character not found");
 
-    let player_update = SinglePlayerUpdate {
+    let player_update = PlayerSyncPacket::ClientToServer(SinglePlayerUpdate {
         transform: *transform,
-    };
+    });
 
     let payload = bincode::serialize(&player_update).unwrap();
 
     client.send_message(RenetChannel::PlayerToServerSync, payload);
+}
+
+fn receive_player_to_server_sync(
+    mut server: ResMut<RenetServer>,
+    mut player_query: Query<&mut Transform>,
+    lobby: Res<Lobby>,
+) {
+    for (id, entity) in lobby.get_map() {
+        if let Some(packet) = server.receive_message(*id, RenetChannel::PlayerToServerSync) {
+            if let Ok(deserialized) = bincode::deserialize(&packet).map_err(|e| warn!("{}", e)) {
+                match deserialized {
+                    PlayerSyncPacket::ClientToServer(single_player_update) => {
+                        *player_query.get_mut(*entity).unwrap() = single_player_update.transform;
+                    }
+                    _ => {
+                        warn!("Incorrect packet received from client")
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]

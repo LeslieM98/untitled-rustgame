@@ -97,6 +97,10 @@ impl Lobby {
         }
     }
 
+    pub fn get_map(&self) -> &HashMap<u64, Entity> {
+        &self.player_ids
+    }
+
     pub fn with_player_ids(player_ids: HashMap<u64, Entity>, spawn_player: SpawnFunction) -> Lobby {
         Lobby {
             player_ids,

@@ -5,6 +5,7 @@ use std::str::FromStr;
 use std::time::SystemTime;
 
 use crate::network::lobby::LobbyServerPlugin;
+use crate::network::remote_player::ServerPlayerSyncPlugin;
 use crate::network::*;
 
 pub const MAX_CONNECTIONS: usize = 5;
@@ -67,6 +68,7 @@ impl Plugin for ServerPlugin {
         .add_event::<ClientDisconnectedEvent>()
         .add_plugin(RenetServerPlugin::default())
         .add_plugin(LobbyServerPlugin::default())
+        .add_plugin(ServerPlayerSyncPlugin)
         .add_system(handle_events_system);
     }
 }
