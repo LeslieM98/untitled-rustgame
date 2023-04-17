@@ -16,7 +16,7 @@ pub struct ClientPlayerSyncPlugin;
 
 impl Plugin for ClientPlayerSyncPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(send_player_to_server_sync);
+        app.add_system(send_client_to_server_sync);
     }
 }
 
@@ -24,7 +24,7 @@ pub struct ServerPlayerSyncPlugin;
 
 impl Plugin for ServerPlayerSyncPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(receive_player_to_server_sync);
+        app.add_system(receive_client_to_server_sync);
     }
 }
 
@@ -78,7 +78,7 @@ pub fn spawn_remote_player(commands: &mut Commands, client_id: u64) -> Entity {
         .id()
 }
 
-fn send_player_to_server_sync(
+fn send_client_to_server_sync(
     player_transform_query: Query<&Transform, With<PlayerMarker>>,
     mut client: ResMut<RenetClient>,
 ) {
@@ -95,7 +95,7 @@ fn send_player_to_server_sync(
     client.send_message(RenetChannel::PlayerToServerSync, payload);
 }
 
-fn receive_player_to_server_sync(
+fn receive_client_to_server_sync(
     mut server: ResMut<RenetServer>,
     mut player_query: Query<&mut Transform>,
     lobby: Res<Lobby>,
