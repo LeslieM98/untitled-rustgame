@@ -1,12 +1,8 @@
 use bevy::prelude::{
     info, Commands, Component, Entity, Quat, Query, ResMut, Transform, Vec3, With,
 };
+use bevy::reflect::erased_serde::__private::serde::{Deserialize, Serialize};
 use bevy_renet::renet::RenetClient;
-use bincode::de::read::Reader;
-use bincode::enc::write::Writer;
-use bincode::enc::Encoder;
-use bincode::error::EncodeError;
-use bincode::{Decode, Encode};
 
 use crate::actor::{player::PlayerMarker, Actor};
 
@@ -23,7 +19,7 @@ impl PlayerID {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 struct PlayerUpdatePacket {
     transform: Transform,
 }
@@ -31,74 +27,6 @@ struct PlayerUpdatePacket {
 impl PlayerUpdatePacket {
     pub fn new(transform: Transform) -> Self {
         Self { transform }
-    }
-}
-
-impl Encode for PlayerUpdatePacket {
-    fn encode<E: Encoder>(&self, encoder: &mut E) -> Result<(), EncodeError> {
-        let writer = encoder.writer();
-
-        let translation_x = self.transform.translation.x.to_le_bytes();
-        let translation_y = self.transform.translation.y.to_le_bytes();
-        let translation_z = self.transform.translation.z.to_le_bytes();
-
-        writer.write(&translation_x)?;
-        writer.write(&translation_y)?;
-        writer.write(&translation_z)?;
-
-        let rotation = self.transform.rotation.to_array();
-        for element in rotation {
-            let encoded = element.to_le_bytes();
-            writer.write(&encoded)?;
-        }
-
-        let scale_x = self.transform.scale.x.to_le_bytes();
-        let scale_y = self.transform.scale.y.to_le_bytes();
-        let scale_z = self.transform.scale.z.to_le_bytes();
-
-        writer.write(&scale_x)?;
-        writer.write(&scale_y)?;
-        writer.write(&scale_z)?;
-
-        Ok(())
-    }
-}
-
-impl Decode for PlayerUpdatePacket {
-    fn decode<D: bincode::de::Decoder>(
-        decoder: &mut D,
-    ) -> Result<Self, bincode::error::DecodeError> {
-        let reader = decoder.reader();
-        let mut buff = [0; 4];
-
-        reader.read(&mut buff)?;
-        let translation_x = f32::from_le_bytes(buff);
-        reader.read(&mut buff)?;
-        let translation_y = f32::from_le_bytes(buff);
-        reader.read(&mut buff)?;
-        let translation_z = f32::from_le_bytes(buff);
-        reader.read(&mut buff)?;
-        let rotation_x = f32::from_le_bytes(buff);
-        reader.read(&mut buff)?;
-        let rotation_y = f32::from_le_bytes(buff);
-        reader.read(&mut buff)?;
-        let rotation_z = f32::from_le_bytes(buff);
-        reader.read(&mut buff)?;
-        let rotation_w = f32::from_le_bytes(buff);
-        reader.read(&mut buff)?;
-        let scale_x = f32::from_le_bytes(buff);
-        reader.read(&mut buff)?;
-        let scale_y = f32::from_le_bytes(buff);
-        reader.read(&mut buff)?;
-        let scale_z = f32::from_le_bytes(buff);
-
-        let transform = Transform {
-            translation: Vec3::new(translation_x, translation_y, translation_z),
-            rotation: Quat::from_array([rotation_x, rotation_y, rotation_z, rotation_w]),
-            scale: Vec3::new(scale_x, scale_y, scale_z),
-        };
-
-        Ok(PlayerUpdatePacket::new(transform))
     }
 }
 
@@ -123,8 +51,7 @@ fn sync_player_to_server(
         transform: *transform,
     };
 
-    let payload = bincode::encode_to_vec(player_update, bincode::config::standard())
-        .expect("Error while encoding player transform");
+    let payload = bincode::serialize(&player_update).unwrap();
 
     client.send_message(RenetChannel::PlayerToServerSync, payload);
 }
@@ -144,14 +71,10 @@ mod tests {
         };
         let initial = PlayerUpdatePacket::new(transform);
 
-        let data = bincode::encode_to_vec(initial, bincode::config::standard())
-            .expect("Error while encoding");
+        let data = bincode::serialize(&initial).unwrap();
 
-        let (subject, size): (PlayerUpdatePacket, usize) =
-            bincode::decode_from_slice(&data, bincode::config::standard())
-                .expect("Error while decoding");
+        let subject = bincode::deserialize(&data).unwrap();
 
-        assert_eq!(size, data.len());
         assert_eq!(initial, subject);
     }
 }

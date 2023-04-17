@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 use bevy::utils::HashMap;
 use bevy_renet::renet::{RenetClient, RenetServer};
-use bincode::*;
+use bincode;
+use serde::{Deserialize, Serialize};
 
 use crate::network::client::ClientID;
 use crate::network::server::MAX_CONNECTIONS;
@@ -56,7 +57,7 @@ fn send_sync(
     }
 
     let sync = lobby.generate_sync_package();
-    let payload = bincode::encode_to_vec(sync, config::standard()).unwrap();
+    let payload = bincode::serialize(&sync).unwrap();
     server.broadcast_message(RenetChannel::LobbySync, payload);
 }
 
@@ -68,8 +69,7 @@ fn receive_sync(
 ) {
     let sync = client.receive_message(RenetChannel::LobbySync);
     if let Some(data) = sync {
-        let (packet, _size) =
-            bincode::decode_from_slice(data.as_slice(), config::standard()).unwrap();
+        let packet = bincode::deserialize(data.as_slice()).unwrap();
         lobby.apply_sync_package(&packet, &mut commands, &client_id.id);
     }
 }
@@ -84,7 +84,7 @@ pub struct Lobby {
     spawn_player: SpawnFunction,
 }
 
-#[derive(Encode, Decode)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct SyncConnectedPlayersPackage {
     ids: [Option<u64>; MAX_CONNECTIONS],
 }
@@ -341,5 +341,21 @@ mod tests {
 
         assert_eq!(2, server_lobby.player_ids.len());
         assert_eq!(2, client_lobby.player_ids.len());
+    }
+
+    #[test]
+    fn correct_serialization() {
+        let mut player_ids: HashMap<u64, Entity> = HashMap::default();
+        player_ids.insert(0, Entity::from_bits(0));
+        player_ids.insert(1, Entity::from_bits(1));
+        player_ids.insert(15, Entity::from_bits(25634));
+
+        let lobby = Lobby::with_player_ids(player_ids.clone(), Box::new(dummy_function));
+        let sync = lobby.generate_sync_package();
+        let payload = bincode::serialize(&sync).unwrap();
+
+        let deserialized = bincode::deserialize(&payload).unwrap();
+
+        assert_eq!(sync, deserialized);
     }
 }
