@@ -2,6 +2,7 @@
 pub enum RenetChannel {
     LobbySync = 0,
     PlayerToServerSync = 1,
+    ServerToClientSync = 2,
 }
 
 impl Into<u8> for RenetChannel {
