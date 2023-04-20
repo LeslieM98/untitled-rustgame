@@ -1,7 +1,8 @@
 use bevy::app::App;
 use bevy::log::warn;
 use bevy::prelude::{
-    info, Commands, Component, Entity, Plugin, Query, Res, ResMut, Transform, With,
+    info, Commands, Component, CoreSet, Entity, EventWriter, IntoSystemConfig, Plugin, Query, Res,
+    ResMut, Transform, With,
 };
 use bevy::reflect::erased_serde::__private::serde::{Deserialize, Serialize};
 use bevy_renet::renet::{RenetClient, RenetServer};
@@ -10,14 +11,19 @@ use crate::actor::{player::PlayerMarker, Actor};
 use crate::network::lobby::Lobby;
 use crate::network::server::MAX_CONNECTIONS;
 
+use super::packet_communication::{
+    client_send_packet, server_recv_packet, PacketMetaData, PacketType,
+};
 use super::renet_config::RenetChannel;
 
 pub struct ClientPlayerSyncPlugin;
 
 impl Plugin for ClientPlayerSyncPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(send_client_to_server_sync)
-            .add_system(receive_server_to_client_sync);
+        app.add_event::<SinglePlayerUpdate>()
+            .add_system(sync_client_to_server)
+            .add_system(receive_server_to_client_sync)
+            .add_system(client_send_packet::<SinglePlayerUpdate>.in_base_set(CoreSet::Last));
     }
 }
 
@@ -52,6 +58,16 @@ impl SinglePlayerUpdate {
     }
 }
 
+impl PacketMetaData for SinglePlayerUpdate {
+    fn get_packet_type() -> super::packet_communication::PacketType {
+        PacketType::ClientToServerPlayerSync
+    }
+
+    fn get_content_size(&self) -> u128 {
+        bincode::serialized_size(self).unwrap() as u128
+    }
+}
+
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Default)]
 struct MultiplePlayerUpdate {
     content: [Option<(PlayerID, SinglePlayerUpdate)>; MAX_CONNECTIONS],
@@ -74,9 +90,9 @@ pub fn spawn_remote_player(commands: &mut Commands, client_id: u64) -> Entity {
         .id()
 }
 
-fn send_client_to_server_sync(
+fn sync_client_to_server(
     player_transform_query: Query<&Transform, With<PlayerMarker>>,
-    mut client: ResMut<RenetClient>,
+    mut events: EventWriter<SinglePlayerUpdate>,
 ) {
     let transform = player_transform_query
         .get_single()
@@ -86,11 +102,7 @@ fn send_client_to_server_sync(
         transform: *transform,
     };
 
-    let payload = bincode::serialize(&player_update).unwrap();
-
-    if client.can_send_message(RenetChannel::PlayerToServerSync) {
-        client.send_message(RenetChannel::PlayerToServerSync, payload);
-    }
+    events.send(player_update);
 }
 
 fn receive_client_to_server_sync(

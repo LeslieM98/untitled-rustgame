@@ -4,19 +4,36 @@ use serde::{Deserialize, Serialize};
 
 use super::lobby::Lobby;
 
-trait PacketMetaData: 'static + Sync + Send {
+pub struct NetworkProtocolServerPlugin;
+pub struct NetworkProtocolClientPlugin;
+
+impl Plugin for NetworkProtocolServerPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_system(clear_messages.in_base_set(CoreSet::First))
+            .add_system(server_recv_packet);
+    }
+}
+
+impl Plugin for NetworkProtocolClientPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_system(clear_messages.in_base_set(CoreSet::First));
+    }
+}
+
+pub trait PacketMetaData: 'static + Sync + Send {
     fn get_packet_type() -> PacketType;
     fn get_content_size(&self) -> u128;
 }
 
-trait BroadcastPacket: PacketMetaData {}
+pub trait BroadcastPacket: PacketMetaData {}
 trait TargetedPacket: PacketMetaData {
     fn get_target_client_id() -> u64;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum PacketType {
-    PlayerSync,
+    ClientToServerPlayerSync,
+    ServerToClientPlayerSync,
 }
 
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
@@ -46,13 +63,15 @@ impl Packet {
     }
 }
 
-#[derive(Resource, Debug)]
+#[derive(Resource, Debug, Default)]
 pub struct ReceivedMessages {
     pub recv: HashMap<PacketType, Vec<Vec<u8>>>,
 }
 
-fn client_send_packet<T>(connection: &mut RenetClient, content_events: &mut EventReader<T>)
-where
+pub fn client_send_packet<T>(
+    mut connection: ResMut<RenetClient>,
+    mut content_events: EventReader<T>,
+) where
     T: PacketMetaData + Serialize,
 {
     for content in content_events.iter() {
@@ -68,7 +87,7 @@ where
 }
 
 fn server_recv_packet(
-    connection: &mut RenetServer,
+    mut connection: ResMut<RenetServer>,
     lobby: Res<Lobby>,
     mut received_messages: ResMut<ReceivedMessages>,
 ) {
@@ -101,7 +120,7 @@ fn server_recv_packet(
     }
 }
 
-fn client_recv_packet(
+pub fn client_recv_packet(
     connection: &mut RenetClient,
     mut received_messages: ResMut<ReceivedMessages>,
 ) {
@@ -132,7 +151,7 @@ fn client_recv_packet(
     }
 }
 
-fn server_broadcast_packet<T>(connection: &mut RenetServer, content_events: &mut EventReader<T>)
+pub fn server_broadcast_packet<T>(connection: &mut RenetServer, content_events: &mut EventReader<T>)
 where
     T: BroadcastPacket + Serialize,
 {
@@ -141,4 +160,8 @@ where
             connection.broadcast_message(DefaultChannel::Unreliable, serialized);
         }
     }
+}
+
+fn clear_messages(mut recv_messages: ResMut<ReceivedMessages>) {
+    *recv_messages = ReceivedMessages::default();
 }
