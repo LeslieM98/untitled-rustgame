@@ -2,10 +2,16 @@ use bevy::{prelude::*, utils::HashMap};
 use bevy_renet::renet::{DefaultChannel, RenetClient, RenetServer};
 use serde::{Deserialize, Serialize};
 
-use super::lobby::Lobby;
+use super::{client::ClientID, lobby::Lobby};
 
 pub struct NetworkProtocolServerPlugin;
 pub struct NetworkProtocolClientPlugin;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Deserialize, Serialize)]
+pub enum Sender {
+    Server,
+    Client(u64),
+}
 
 impl Plugin for NetworkProtocolServerPlugin {
     fn build(&self, app: &mut App) {
@@ -41,11 +47,12 @@ struct Packet {
     pub protocol_version: u16,
     pub packet_type: PacketType,
     pub content_size: u128,
+    pub sender: Sender,
     pub content: Vec<u8>,
 }
 
 impl Packet {
-    fn new<T>(content: &T) -> Packet
+    fn new<T>(content: &T, sender: Sender) -> Packet
     where
         T: PacketMetaData + Serialize,
     {
@@ -54,8 +61,16 @@ impl Packet {
             protocol_version: Self::current_protocol_version(),
             packet_type: T::get_packet_type(),
             content_size: serialized_content.len() as u128,
+            sender,
             content: serialized_content,
         }
+    }
+
+    fn new_server_packet<T>(content: &T) -> Packet
+    where
+        T: PacketMetaData + Serialize,
+    {
+        Self::new(content, Sender::Server)
     }
 
     fn current_protocol_version() -> u16 {
@@ -71,6 +86,7 @@ pub struct ReceivedMessages {
 pub fn client_send_packet<T>(
     mut connection: ResMut<RenetClient>,
     mut content_events: EventReader<T>,
+    client_id: Res<ClientID>,
 ) where
     T: PacketMetaData + Serialize,
 {
@@ -79,7 +95,7 @@ pub fn client_send_packet<T>(
             return;
         }
 
-        let packet = Packet::new(content);
+        let packet = Packet::new(content, Sender::Client(client_id.id));
         if let Ok(serialized) = bincode::serialize(&packet).map_err(|err| warn!("{}", err)) {
             connection.send_message(DefaultChannel::Unreliable, serialized);
         }
@@ -156,12 +172,14 @@ where
     T: BroadcastPacket + Serialize,
 {
     for content in content_events {
-        if let Ok(serialized) = bincode::serialize(content).map_err(|err| warn!("{}", err)) {
+        if let Ok(serialized) =
+            bincode::serialize(&Packet::new_server_packet(content)).map_err(|err| warn!("{}", err))
+        {
             connection.broadcast_message(DefaultChannel::Unreliable, serialized);
         }
     }
 }
 
 fn clear_messages(mut recv_messages: ResMut<ReceivedMessages>) {
-    *recv_messages = ReceivedMessages::default();
+    recv_messages.recv.clear();
 }
