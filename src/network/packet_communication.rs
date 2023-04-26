@@ -43,7 +43,7 @@ pub enum PacketType {
 }
 
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
-struct Packet {
+pub struct Packet {
     pub protocol_version: u16,
     pub packet_type: PacketType,
     pub content_size: u128,
@@ -80,7 +80,7 @@ impl Packet {
 
 #[derive(Resource, Debug, Default)]
 pub struct ReceivedMessages {
-    pub recv: HashMap<PacketType, Vec<Vec<u8>>>,
+    pub recv: HashMap<PacketType, Vec<Packet>>,
 }
 
 pub fn client_send_packet<T>(
@@ -130,7 +130,7 @@ fn server_recv_packet(
                     .recv
                     .get_mut(&deserialized.packet_type)
                     .unwrap()
-                    .push(deserialized.content);
+                    .push(deserialized);
             }
         }
     }
@@ -162,7 +162,7 @@ pub fn client_recv_packet(
                 .recv
                 .get_mut(&deserialized.packet_type)
                 .unwrap()
-                .push(deserialized.content);
+                .push(deserialized);
         }
     }
 }
