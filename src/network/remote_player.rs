@@ -5,16 +5,13 @@ use bevy::prelude::{
     ResMut, Transform, With,
 };
 use bevy::reflect::erased_serde::__private::serde::{Deserialize, Serialize};
-use bevy_renet::renet::{RenetClient, RenetServer};
+use bevy_renet::renet::{DefaultChannel, RenetClient, RenetServer};
 
 use crate::actor::{player::PlayerMarker, Actor};
 use crate::network::lobby::Lobby;
 use crate::network::server::MAX_CONNECTIONS;
 
-use super::packet_communication::{
-    client_send_packet, server_recv_packet, PacketMetaData, PacketType,
-};
-use super::renet_config::RenetChannel;
+use super::packet_communication::{client_send_packet, PacketMetaData, PacketType};
 
 pub struct ClientPlayerSyncPlugin;
 
@@ -111,7 +108,7 @@ fn receive_client_to_server_sync(
     lobby: Res<Lobby>,
 ) {
     for (id, entity) in lobby.get_map() {
-        while let Some(packet) = server.receive_message(*id, RenetChannel::PlayerToServerSync) {
+        while let Some(packet) = server.receive_message(*id, DefaultChannel::Unreliable) {
             let deserialized: SinglePlayerUpdate = bincode::deserialize(&packet)
                 .map_err(|e| warn!("{}", e))
                 .unwrap();
@@ -130,7 +127,7 @@ fn send_server_to_client_sync(
     }
 
     let serialized = bincode::serialize(&player_update).unwrap();
-    server.broadcast_message(RenetChannel::ServerToClientSync, serialized);
+    server.broadcast_message(DefaultChannel::Unreliable, serialized);
 }
 
 fn receive_server_to_client_sync(
@@ -138,7 +135,7 @@ fn receive_server_to_client_sync(
     lobby: Res<Lobby>,
     mut player_query: Query<&mut Transform>,
 ) {
-    while let Some(msg) = client.receive_message(RenetChannel::ServerToClientSync) {
+    while let Some(msg) = client.receive_message(DefaultChannel::Unreliable) {
         let updated_content: MultiplePlayerUpdate = bincode::deserialize(&msg).unwrap();
 
         let lobby_map = lobby.get_map();

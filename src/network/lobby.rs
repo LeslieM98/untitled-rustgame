@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy::utils::HashMap;
-use bevy_renet::renet::{RenetClient, RenetServer};
+use bevy_renet::renet::{DefaultChannel, RenetClient, RenetServer};
 use bincode;
 use serde::{Deserialize, Serialize};
 
@@ -9,7 +9,6 @@ use crate::network::server::MAX_CONNECTIONS;
 use crate::network::server::{ClientConnectedEvent, ClientDisconnectedEvent};
 
 use super::remote_player::spawn_remote_player;
-use super::renet_config::RenetChannel;
 
 type SpawnFunction = Box<dyn Fn(&mut Commands, u64) -> Entity + Send + Sync>;
 
@@ -58,7 +57,7 @@ fn send_sync(
 
     let sync = lobby.generate_sync_package();
     let payload = bincode::serialize(&sync).unwrap();
-    server.broadcast_message(RenetChannel::LobbySync, payload);
+    server.broadcast_message(DefaultChannel::Reliable, payload);
 }
 
 fn receive_sync(
@@ -67,7 +66,7 @@ fn receive_sync(
     mut commands: Commands,
     client_id: Res<ClientID>,
 ) {
-    let sync = client.receive_message(RenetChannel::LobbySync);
+    let sync = client.receive_message(DefaultChannel::Reliable);
     if let Some(data) = sync {
         let packet = bincode::deserialize(data.as_slice()).unwrap();
         lobby.apply_sync_package(&packet, &mut commands, &client_id.id);

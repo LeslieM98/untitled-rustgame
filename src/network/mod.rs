@@ -4,7 +4,6 @@ pub mod client;
 pub mod lobby;
 pub mod packet_communication;
 pub mod remote_player;
-pub mod renet_config;
 pub mod server;
 
 type PlayerIdentifier = usize;
