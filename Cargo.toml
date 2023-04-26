@@ -12,7 +12,7 @@ members = ["crates/*"]
 stats_and_abilities_system = {path = "crates/stats_and_abilities_system"}
 
 bevy = "0.10"
-bevy_editor_pls = "0.3" # dont need tbh
+bevy_editor_pls = "0.4" # dont need tbh
 bevy_egui = "0.20"
 bevy_rapier3d = "0.21"
 leafwing-input-manager = "0.9"
