@@ -1,6 +1,5 @@
 use crate::actor::npc::EnemyPlugin;
 use crate::network::server::ServerPlugin;
-use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy_editor_pls::EditorPlugin;
 
