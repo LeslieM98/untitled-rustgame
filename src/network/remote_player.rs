@@ -125,20 +125,10 @@ fn receive_client_to_server_sync(
     mut player_query: Query<&mut Transform>,
     lobby: Res<Lobby>,
 ) {
-    if !recv_messages
-        .recv
-        .contains_key(&PacketType::ClientToServerPlayerSync)
-    {
-        return;
-    }
+    let messages = recv_messages.deserialize::<SinglePlayerUpdate>();
 
-    let sync_packets = recv_messages
-        .recv
-        .get(&PacketType::ClientToServerPlayerSync)
-        .unwrap();
-
-    for sync_packet in sync_packets {
-        let sender_id = match sync_packet.sender {
+    for (sender, message) in messages {
+        let sender_id = match sender {
             Client(id) => id,
             _ => {
                 warn! {"Server received a package sent by a Server"};
@@ -162,9 +152,7 @@ fn receive_client_to_server_sync(
                 continue;
             }
         };
-
-        let deserialized: SinglePlayerUpdate = bincode::deserialize(&sync_packet.content).unwrap();
-        *player_transform = deserialized.transform;
+        *player_transform = message.transform;
     }
 }
 
@@ -185,28 +173,15 @@ fn receive_server_to_client_sync(
     mut player_query: Query<&mut Transform>,
     client_id: Res<ClientID>,
 ) {
-    if !recv_messages
-        .recv
-        .contains_key(&PacketType::ServerToClientPlayerSync)
-    {
-        return;
-    }
+    let messages = recv_messages.deserialize::<MultiplePlayerUpdate>();
 
-    let sync_packets = recv_messages
-        .recv
-        .get(&PacketType::ServerToClientPlayerSync)
-        .unwrap();
-
-    for sync_packet in sync_packets {
-        if sync_packet.sender != Sender::Server {
+    for (sender, message) in messages {
+        if sender != Sender::Server {
             warn! {"Client received a package sent by a Client"};
             continue;
         }
 
-        let deserialized: MultiplePlayerUpdate =
-            bincode::deserialize(&sync_packet.content).unwrap();
-
-        for updates in deserialized.content {
+        for updates in message.content {
             let (player_id, update) = match updates {
                 Some(content) => content,
                 _ => continue,

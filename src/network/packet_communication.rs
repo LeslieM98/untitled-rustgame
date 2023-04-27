@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use bevy::{prelude::*, utils::HashMap};
 use bevy_renet::renet::{DefaultChannel, RenetClient, RenetServer};
 use serde::{Deserialize, Serialize};
@@ -83,7 +85,35 @@ impl Packet {
 
 #[derive(Resource, Debug, Default)]
 pub struct ReceivedMessages {
-    pub recv: HashMap<PacketType, Vec<Packet>>,
+    recv: HashMap<PacketType, Vec<Packet>>,
+}
+
+impl ReceivedMessages {
+    pub fn deserialize<T>(&self) -> Vec<(Sender, T)>
+    where
+        T: PacketMetaData + Debug + for<'a> Deserialize<'a>,
+    {
+        let recv_messages = self.recv.get(&T::get_packet_type());
+        if recv_messages.is_none() {
+            return Vec::new();
+        }
+
+        let packets = recv_messages.unwrap();
+        let mut decoded = Vec::new();
+
+        for packet in packets {
+            let deserialized = bincode::deserialize(&packet.content);
+            if deserialized.is_err() {
+                let err = deserialized.unwrap_err();
+                warn!("Error decoding {:?}: {}", T::get_packet_type(), err);
+                continue;
+            }
+            let message = deserialized.unwrap();
+            decoded.push((packet.sender, message));
+        }
+
+        return decoded;
+    }
 }
 
 pub fn client_send_packet<T>(
