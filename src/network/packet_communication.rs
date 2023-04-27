@@ -16,13 +16,15 @@ pub enum Sender {
 impl Plugin for NetworkProtocolServerPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(clear_messages.in_base_set(CoreSet::First))
-            .add_system(server_recv_packet);
+            .add_system(server_recv_packet)
+            .insert_resource(ReceivedMessages::default());
     }
 }
 
 impl Plugin for NetworkProtocolClientPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(clear_messages.in_base_set(CoreSet::First));
+        app.add_system(clear_messages.in_base_set(CoreSet::First))
+            .insert_resource(ReceivedMessages::default());
     }
 }
 

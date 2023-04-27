@@ -1,4 +1,5 @@
 use crate::actor::npc::EnemyPlugin;
+use crate::network::packet_communication::NetworkProtocolServerPlugin;
 use crate::network::server::ServerPlugin;
 use bevy::prelude::*;
 use bevy_editor_pls::EditorPlugin;
@@ -11,6 +12,7 @@ impl Plugin for GameServer {
             //.add_plugin(LogPlugin::default())
             .add_plugins(DefaultPlugins)
             .add_plugin(EditorPlugin::default())
+            .add_plugin(NetworkProtocolServerPlugin)
             .add_plugin(ServerPlugin::new("127.0.0.1", 42069))
             .add_plugin(EnemyPlugin);
     }

@@ -11,7 +11,10 @@ use crate::actor::{player::PlayerMarker, Actor};
 use crate::network::lobby::Lobby;
 use crate::network::server::MAX_CONNECTIONS;
 
-use super::packet_communication::{client_send_packet, PacketMetaData, PacketType};
+use super::packet_communication::{
+    client_send_packet, PacketMetaData, PacketType, ReceivedMessages,
+};
+use crate::network::packet_communication::Sender::Client;
 
 pub struct ClientPlayerSyncPlugin;
 
@@ -103,17 +106,50 @@ fn sync_client_to_server(
 }
 
 fn receive_client_to_server_sync(
-    mut server: ResMut<RenetServer>,
+    recv_messages: Res<ReceivedMessages>,
     mut player_query: Query<&mut Transform>,
     lobby: Res<Lobby>,
 ) {
-    for (id, entity) in lobby.get_map() {
-        while let Some(packet) = server.receive_message(*id, DefaultChannel::Unreliable) {
-            let deserialized: SinglePlayerUpdate = bincode::deserialize(&packet)
-                .map_err(|e| warn!("{}", e))
-                .unwrap();
-            *player_query.get_mut(*entity).unwrap() = deserialized.transform;
-        }
+    if !recv_messages
+        .recv
+        .contains_key(&PacketType::ClientToServerPlayerSync)
+    {
+        return;
+    }
+
+    let sync_packets = recv_messages
+        .recv
+        .get(&PacketType::ClientToServerPlayerSync)
+        .unwrap();
+
+    for sync_packet in sync_packets {
+        let sender_id = match sync_packet.sender {
+            Client(id) => id,
+            _ => {
+                warn! {"Server received a package sent by a Server"};
+                continue;
+            }
+        };
+        let entity = match lobby.get_map().get(&sender_id) {
+            Some(entity) => entity,
+            _ => {
+                warn!("Client {} cannot be mapped to an entity", sender_id);
+                continue;
+            }
+        };
+        let mut player_transform = match player_query.get_mut(*entity) {
+            Ok(transform) => transform,
+            Err(err) => {
+                warn!(
+                    "Could not find the matching entity for id {}: {}",
+                    sender_id, err
+                );
+                continue;
+            }
+        };
+
+        let deserialized: SinglePlayerUpdate = bincode::deserialize(&sync_packet.content).unwrap();
+        *player_transform = deserialized.transform;
     }
 }
 
