@@ -232,7 +232,7 @@ fn receive_server_to_client_sync(
                 }
             };
 
-            *player_transform = dbg!(update.transform);
+            *player_transform = update.transform;
         }
     }
 }
