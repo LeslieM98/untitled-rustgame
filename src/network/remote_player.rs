@@ -2,17 +2,18 @@ use bevy::app::App;
 use bevy::log::warn;
 use bevy::prelude::{
     info, Commands, Component, CoreSet, Entity, EventWriter, IntoSystemConfig, Plugin, Query, Res,
-    ResMut, Transform, With,
+    Transform, With,
 };
 use bevy::reflect::erased_serde::__private::serde::{Deserialize, Serialize};
-use bevy_renet::renet::{DefaultChannel, RenetClient, RenetServer};
 
 use crate::actor::{player::PlayerMarker, Actor};
 use crate::network::lobby::Lobby;
 use crate::network::server::MAX_CONNECTIONS;
 
+use super::client::ClientID;
 use super::packet_communication::{
-    client_send_packet, PacketMetaData, PacketType, ReceivedMessages,
+    client_send_packet, server_broadcast_packet, BroadcastPacket, PacketMetaData, PacketType,
+    ReceivedMessages, Sender,
 };
 use crate::network::packet_communication::Sender::Client;
 
@@ -31,7 +32,9 @@ pub struct ServerPlayerSyncPlugin;
 
 impl Plugin for ServerPlayerSyncPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(receive_client_to_server_sync)
+        app.add_event::<MultiplePlayerUpdate>()
+            .add_system(server_broadcast_packet::<MultiplePlayerUpdate>.in_base_set(CoreSet::Last))
+            .add_system(receive_client_to_server_sync)
             .add_system(send_server_to_client_sync);
     }
 }
@@ -78,6 +81,18 @@ impl MultiplePlayerUpdate {
         content: [Option<(PlayerID, SinglePlayerUpdate)>; MAX_CONNECTIONS],
     ) -> MultiplePlayerUpdate {
         Self { content }
+    }
+}
+
+impl BroadcastPacket for MultiplePlayerUpdate {}
+
+impl PacketMetaData for MultiplePlayerUpdate {
+    fn get_packet_type() -> PacketType {
+        PacketType::ServerToClientPlayerSync
+    }
+
+    fn get_content_size(&self) -> u128 {
+        bincode::serialized_size(self).unwrap() as u128
     }
 }
 
@@ -154,40 +169,70 @@ fn receive_client_to_server_sync(
 }
 
 fn send_server_to_client_sync(
-    mut server: ResMut<RenetServer>,
+    mut event_writer: EventWriter<MultiplePlayerUpdate>,
     player_query: Query<(&PlayerID, &Transform)>,
 ) {
     let mut player_update = MultiplePlayerUpdate::default();
     for (i, (player_id, transform)) in player_query.iter().enumerate() {
         player_update.content[i] = Some((*player_id, SinglePlayerUpdate::new(*transform)));
     }
-
-    let serialized = bincode::serialize(&player_update).unwrap();
-    server.broadcast_message(DefaultChannel::Unreliable, serialized);
+    event_writer.send(player_update);
 }
 
 fn receive_server_to_client_sync(
-    mut client: ResMut<RenetClient>,
+    recv_messages: Res<ReceivedMessages>,
     lobby: Res<Lobby>,
     mut player_query: Query<&mut Transform>,
+    client_id: Res<ClientID>,
 ) {
-    while let Some(msg) = client.receive_message(DefaultChannel::Unreliable) {
-        let updated_content: MultiplePlayerUpdate = bincode::deserialize(&msg).unwrap();
+    if !recv_messages
+        .recv
+        .contains_key(&PacketType::ServerToClientPlayerSync)
+    {
+        return;
+    }
 
-        let lobby_map = lobby.get_map();
-        for update in updated_content.content {
-            let (id, updated_transform) = if update == None {
-                return;
-            } else {
-                update.unwrap()
+    let sync_packets = recv_messages
+        .recv
+        .get(&PacketType::ServerToClientPlayerSync)
+        .unwrap();
+
+    for sync_packet in sync_packets {
+        if sync_packet.sender != Sender::Server {
+            warn! {"Client received a package sent by a Client"};
+            continue;
+        }
+
+        let deserialized: MultiplePlayerUpdate =
+            bincode::deserialize(&sync_packet.content).unwrap();
+
+        for updates in deserialized.content {
+            let (player_id, update) = match updates {
+                Some(content) => content,
+                _ => continue,
+            };
+            if player_id.id == client_id.id {
+                continue;
+            }
+            let entity = match lobby.get_map().get(&player_id.id) {
+                Some(entity) => entity,
+                _ => {
+                    warn!("Client {} cannot be mapped to an entity", player_id.id);
+                    continue;
+                }
+            };
+            let mut player_transform = match player_query.get_mut(*entity) {
+                Ok(transform) => transform,
+                Err(err) => {
+                    warn!(
+                        "Could not find the matching entity for id {}: {}",
+                        player_id.id, err
+                    );
+                    continue;
+                }
             };
 
-            if lobby_map.contains_key(&id.id) {
-                let mut transform = player_query
-                    .get_mut(*lobby_map.get(&id.id).unwrap())
-                    .unwrap();
-                *transform = updated_transform.transform;
-            }
+            *player_transform = dbg!(update.transform);
         }
     }
 }

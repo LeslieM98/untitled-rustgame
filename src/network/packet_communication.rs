@@ -24,6 +24,7 @@ impl Plugin for NetworkProtocolServerPlugin {
 impl Plugin for NetworkProtocolClientPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(clear_messages.in_base_set(CoreSet::First))
+            .add_system(client_recv_packet)
             .insert_resource(ReceivedMessages::default());
     }
 }
@@ -139,7 +140,7 @@ fn server_recv_packet(
 }
 
 pub fn client_recv_packet(
-    connection: &mut RenetClient,
+    mut connection: ResMut<RenetClient>,
     mut received_messages: ResMut<ReceivedMessages>,
 ) {
     while let Some(recv) = connection.receive_message(DefaultChannel::Unreliable) {
@@ -169,11 +170,13 @@ pub fn client_recv_packet(
     }
 }
 
-pub fn server_broadcast_packet<T>(connection: &mut RenetServer, content_events: &mut EventReader<T>)
-where
+pub fn server_broadcast_packet<T>(
+    mut connection: ResMut<RenetServer>,
+    mut content_events: EventReader<T>,
+) where
     T: BroadcastPacket + Serialize,
 {
-    for content in content_events {
+    for content in content_events.iter() {
         if let Ok(serialized) =
             bincode::serialize(&Packet::new_server_packet(content)).map_err(|err| warn!("{}", err))
         {
