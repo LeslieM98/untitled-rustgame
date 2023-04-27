@@ -45,6 +45,7 @@ trait TargetedPacket: PacketMetaData {
 pub enum PacketType {
     ClientToServerPlayerSync,
     ServerToClientPlayerSync,
+    LobbySync,
 }
 
 #[derive(Debug, PartialEq, Deserialize, Serialize)]
@@ -57,7 +58,7 @@ pub struct Packet {
 }
 
 impl Packet {
-    fn new<T>(content: &T, sender: Sender) -> Packet
+    pub fn new<T>(content: &T, sender: Sender) -> Packet
     where
         T: PacketMetaData + Serialize,
     {
@@ -173,7 +174,16 @@ pub fn client_recv_packet(
     mut connection: ResMut<RenetClient>,
     mut received_messages: ResMut<ReceivedMessages>,
 ) {
+    let mut read_data = Vec::new();
+
+    while let Some(recv) = connection.receive_message(DefaultChannel::Reliable) {
+        read_data.push(recv);
+    }
     while let Some(recv) = connection.receive_message(DefaultChannel::Unreliable) {
+        read_data.push(recv);
+    }
+
+    for recv in read_data {
         if let Ok(deserialized) =
             bincode::deserialize::<Packet>(&recv).map_err(|err| warn!("{}", err))
         {
