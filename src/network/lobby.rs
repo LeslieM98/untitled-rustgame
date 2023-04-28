@@ -214,7 +214,23 @@ mod tests {
         let lobby = server.world.get_resource::<Lobby>().unwrap();
         assert!(!lobby.connected_clients.is_empty());
         assert!(lobby.connected_clients.contains_key(&42069));
-        assert_eq!(server.world.entities().len(), entity_count + 1)
+        assert_eq!(server.world.entities().len(), entity_count + 1);
+
+        server.world.send_event(ClientConnectedEvent { id: 420 });
+        server.update();
+
+        let lobby = server.world.get_resource::<Lobby>().unwrap();
+        assert!(!lobby.connected_clients.is_empty());
+        assert!(lobby.connected_clients.contains_key(&420));
+        assert_eq!(server.world.entities().len(), entity_count + 2);
+
+        server.world.send_event(ClientConnectedEvent { id: 69 });
+        server.update();
+
+        let lobby = server.world.get_resource::<Lobby>().unwrap();
+        assert!(!lobby.connected_clients.is_empty());
+        assert!(lobby.connected_clients.contains_key(&69));
+        assert_eq!(server.world.entities().len(), entity_count + 3);
     }
 
     #[test]
@@ -231,11 +247,11 @@ mod tests {
             .add_system(client_apply_sync);
         client.update();
 
-        let mock_package = Packet::new(&server_lobby.generate_sync_packet(), Sender::Server);
 
         let lobby = client.world.get_resource::<Lobby>().unwrap();
         assert_eq!(lobby.connected_clients.len(), 0);
 
+        let mock_package = Packet::new(&server_lobby.generate_sync_packet(), Sender::Server);
         client
             .world
             .get_resource_mut::<ReceivedMessages>()
@@ -248,5 +264,203 @@ mod tests {
 
         assert_eq!(lobby.connected_clients.len(), 1);
         assert!(lobby.connected_clients.contains_key(&42069));
+
+
+        server_lobby
+            .connected_clients
+            .insert(420, Entity::from_bits(0));
+        let mock_package = Packet::new(&server_lobby.generate_sync_packet(), Sender::Server);
+        client
+            .world
+            .get_resource_mut::<ReceivedMessages>()
+            .unwrap()
+            .recv
+            .insert(LobbySync::get_packet_type(), vec![mock_package]);
+
+        client.update();
+        let lobby = client.world.get_resource::<Lobby>().unwrap();
+
+        assert_eq!(lobby.connected_clients.len(), 2);
+        assert!(lobby.connected_clients.contains_key(&420));
+
+        server_lobby
+            .connected_clients
+            .insert(69, Entity::from_bits(0));
+        let mock_package = Packet::new(&server_lobby.generate_sync_packet(), Sender::Server);
+        client
+            .world
+            .get_resource_mut::<ReceivedMessages>()
+            .unwrap()
+            .recv
+            .insert(LobbySync::get_packet_type(), vec![mock_package]);
+
+        client.update();
+        let lobby = client.world.get_resource::<Lobby>().unwrap();
+
+        assert_eq!(lobby.connected_clients.len(), 3);
+        assert!(lobby.connected_clients.contains_key(&69));
+
+
+
+    }
+
+    #[test]
+    fn simulate_disconnecting_player_on_server_side() {
+
+        let mut server = App::new();
+        server
+            .insert_resource(Lobby::default())
+            .add_system(server_client_connected)
+            .add_system(server_client_disconnected)
+            .add_event::<ClientConnectedEvent>()
+            .add_event::<ClientDisconnectedEvent>();
+        server.update();
+        server.world.send_event(ClientConnectedEvent{id:42069});
+        server.update();
+        server.world.send_event(ClientConnectedEvent{id:69});
+        server.update();
+        server.world.send_event(ClientConnectedEvent{id:420});
+        server.update();
+
+        assert_eq!(server.world.get_resource::<Lobby>().unwrap().connected_clients.len(), 3);
+        assert!(server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&42069));
+        assert!(server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&69));
+        assert!(server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&420));
+
+        server.world.send_event(ClientDisconnectedEvent{id:420});
+        server.update();
+        assert_eq!(server.world.get_resource::<Lobby>().unwrap().connected_clients.len(), 2);
+        assert!(server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&42069));
+        assert!(server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&69));
+        assert!(!server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&420));
+
+        server.world.send_event(ClientDisconnectedEvent{id:69});
+        server.update();
+        assert_eq!(server.world.get_resource::<Lobby>().unwrap().connected_clients.len(), 1);
+        assert!(server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&42069));
+        assert!(!server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&69));
+        assert!(!server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&420));
+
+        server.world.send_event(ClientDisconnectedEvent{id:42069});
+        server.update();
+        assert_eq!(server.world.get_resource::<Lobby>().unwrap().connected_clients.len(), 0);
+        assert!(!server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&42069));
+        assert!(!server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&69));
+        assert!(!server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&420));
+    }
+
+    #[test]
+    fn simulate_disconnecting_player_on_client_side() {
+        let mut server = App::new();
+        server
+            .insert_resource(Lobby::default())
+            .add_system(server_client_connected)
+            .add_system(server_client_disconnected)
+            .add_event::<ClientConnectedEvent>()
+            .add_event::<ClientDisconnectedEvent>();
+
+        let mut client = App::new();
+        client
+            .add_event::<AttachModelToPlayerEvent>()
+            .insert_resource(Lobby::default())
+            .insert_resource(ReceivedMessages::default())
+            .add_system(client_apply_sync);
+        client.update();
+
+
+        server.update();
+        server.world.send_event(ClientConnectedEvent{id:42069});
+        server.update();
+        server.world.send_event(ClientConnectedEvent{id:69});
+        server.update();
+        server.world.send_event(ClientConnectedEvent{id:420});
+        server.update();
+
+        assert_eq!(server.world.get_resource::<Lobby>().unwrap().connected_clients.len(), 3);
+        assert!(server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&42069));
+        assert!(server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&69));
+        assert!(server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&420));
+
+        let populating_packet = Packet::new(&server.world.get_resource::<Lobby>().unwrap().generate_sync_packet(), Sender::Server);
+        client
+            .world
+            .get_resource_mut::<ReceivedMessages>()
+            .unwrap()
+            .recv
+            .insert(LobbySync::get_packet_type(), vec![populating_packet]);
+        client.update();
+
+        assert_eq!(client.world.get_resource::<Lobby>().unwrap().connected_clients.len(), 3);
+        assert!(client.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&42069));
+        assert!(client.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&69));
+        assert!(client.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&420));
+
+        server.world.send_event(ClientDisconnectedEvent{id:420});
+        server.update();
+        assert_eq!(server.world.get_resource::<Lobby>().unwrap().connected_clients.len(), 2);
+        assert!(server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&42069));
+        assert!(server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&69));
+        assert!(!server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&420));
+
+        let disconnecting_packet = Packet::new(&server.world.get_resource::<Lobby>().unwrap().generate_sync_packet(), Sender::Server);
+        client
+            .world
+            .get_resource_mut::<ReceivedMessages>()
+            .unwrap()
+            .recv
+            .insert(LobbySync::get_packet_type(), vec![disconnecting_packet]);
+        client.update();
+
+        let client_lobby = client.world.get_resource::<Lobby>().unwrap();
+
+        assert_eq!(client_lobby.connected_clients.len(), 3);
+        assert!(client_lobby.connected_clients.contains_key(&42069));
+        assert!(client_lobby.connected_clients.contains_key(&69));
+        assert!(!client_lobby.connected_clients.contains_key(&420));
+
+
+        server.world.send_event(ClientDisconnectedEvent{id:69});
+        server.update();
+        assert_eq!(server.world.get_resource::<Lobby>().unwrap().connected_clients.len(), 1);
+        assert!(server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&42069));
+        assert!(!server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&69));
+        assert!(!server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&420));
+
+        let disconnecting_packet = Packet::new(&server.world.get_resource::<Lobby>().unwrap().generate_sync_packet(), Sender::Server);
+        client
+            .world
+            .get_resource_mut::<ReceivedMessages>()
+            .unwrap()
+            .recv
+            .insert(LobbySync::get_packet_type(), vec![disconnecting_packet]);
+        client.update();
+
+        let client_lobby = client.world.get_resource::<Lobby>().unwrap();
+        assert_eq!(client_lobby.connected_clients.len(), 3);
+        assert!(client_lobby.connected_clients.contains_key(&42069));
+        assert!(!client_lobby.connected_clients.contains_key(&69));
+        assert!(!client_lobby.connected_clients.contains_key(&420));
+
+        server.world.send_event(ClientDisconnectedEvent{id:42069});
+        server.update();
+        assert_eq!(server.world.get_resource::<Lobby>().unwrap().connected_clients.len(), 0);
+        assert!(!server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&42069));
+        assert!(!server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&69));
+        assert!(!server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&420));
+
+        let disconnecting_packet = Packet::new(&server.world.get_resource::<Lobby>().unwrap().generate_sync_packet(), Sender::Server);
+        client
+            .world
+            .get_resource_mut::<ReceivedMessages>()
+            .unwrap()
+            .recv
+            .insert(LobbySync::get_packet_type(), vec![disconnecting_packet]);
+        client.update();
+
+        let client_lobby = client.world.get_resource::<Lobby>().unwrap();
+        assert_eq!(client_lobby.connected_clients.len(), 3);
+        assert!(!client_lobby.connected_clients.contains_key(&42069));
+        assert!(!client_lobby.connected_clients.contains_key(&69));
+        assert!(!client_lobby.connected_clients.contains_key(&420));
     }
 }
