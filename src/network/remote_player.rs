@@ -12,7 +12,7 @@ use crate::network::server::MAX_CONNECTIONS;
 
 use super::client::ClientID;
 use super::packet_communication::{
-    client_send_packet, server_broadcast_packet, BroadcastPacket, PacketMetaData, PacketType,
+    client_send_packet_unreliable, server_broadcast_packet, BroadcastPacket, PacketMetaData, PacketType,
     ReceivedMessages, Sender,
 };
 use crate::network::packet_communication::Sender::Client;
@@ -24,7 +24,7 @@ impl Plugin for ClientPlayerSyncPlugin {
         app.add_event::<SinglePlayerUpdate>()
             .add_system(sync_client_to_server)
             .add_system(receive_server_to_client_sync)
-            .add_system(client_send_packet::<SinglePlayerUpdate>.in_base_set(CoreSet::Last));
+            .add_system(client_send_packet_unreliable::<SinglePlayerUpdate>.in_base_set(CoreSet::Last));
     }
 }
 

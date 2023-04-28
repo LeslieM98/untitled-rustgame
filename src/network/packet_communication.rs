@@ -117,15 +117,46 @@ impl ReceivedMessages {
     }
 }
 
-pub fn client_send_packet<T>(
+pub fn client_send_packet_unreliable<T>(
     mut connection: ResMut<RenetClient>,
     mut content_events: EventReader<T>,
     client_id: Res<ClientID>,
 ) where
     T: PacketMetaData + Serialize,
 {
+    client_send_packet(
+        &mut connection,
+        &mut content_events,
+        &client_id,
+        DefaultChannel::Unreliable.into(),
+    )
+}
+
+pub fn client_send_packet_reliable<T>(
+    mut connection: ResMut<RenetClient>,
+    mut content_events: EventReader<T>,
+    client_id: Res<ClientID>,
+) where
+    T: PacketMetaData + Serialize,
+{
+    client_send_packet(
+        &mut connection,
+        &mut content_events,
+        &client_id,
+        DefaultChannel::Reliable.into(),
+    )
+}
+
+fn client_send_packet<T>(
+    connection: &mut ResMut<RenetClient>,
+    content_events: &mut EventReader<T>,
+    client_id: &Res<ClientID>,
+    channel_id: u8,
+) where
+    T: PacketMetaData + Serialize,
+{
     for content in content_events.iter() {
-        if !connection.can_send_message(DefaultChannel::Unreliable) {
+        if !connection.can_send_message(channel_id) {
             return;
         }
 
@@ -135,7 +166,6 @@ pub fn client_send_packet<T>(
         }
     }
 }
-
 fn server_recv_packet(
     mut connection: ResMut<RenetServer>,
     lobby: Res<Lobby>,
