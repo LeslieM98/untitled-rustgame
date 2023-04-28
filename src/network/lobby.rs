@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::network::server::MAX_CONNECTIONS;
 use crate::network::server::{ClientConnectedEvent, ClientDisconnectedEvent};
 
+use super::client::ClientID;
 use super::packet_communication::{Packet, PacketMetaData, PacketType, Sender};
 use super::remote_player::{spawn_remote_player, PlayerID};
 
@@ -144,13 +145,17 @@ fn client_apply_sync(
     mut event_reader: EventReader<LobbySync>,
     mut commands: Commands,
     mut model_events: EventWriter<AttachModelToPlayerEvent>,
+    client_id: Res<ClientID>
 ) {
     for sync in event_reader.iter() {
         for entity in lobby.disconnect_clients(&sync).iter() {
-            commands.entity(*entity).despawn();
+            commands.entity(*entity).despawn_recursive();
         }
         for client in sync.connected_clients {
             if let Some(id) = client {
+                if client_id.id == id {
+                    continue;
+                }
                 if !lobby.connected_clients.contains_key(&id) {
                     lobby
                         .connected_clients
