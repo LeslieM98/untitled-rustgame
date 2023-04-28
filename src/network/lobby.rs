@@ -40,7 +40,7 @@ impl Plugin for LobbyServerPlugin {
     }
 }
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Debug)]
 pub struct Lobby {
     connected_clients: HashMap<u64, Entity>,
 }
@@ -62,7 +62,7 @@ impl Lobby {
         let mut disconnected_entities = Vec::new();
         let mut disconnected_ids = Vec::new();
         for (id, entity) in &self.connected_clients {
-            if sync.connected_clients.contains(&Some(*id)) {
+            if !sync.connected_clients.contains(&Some(*id)) {
                 disconnected_entities.push(*entity);
                 disconnected_ids.push(*id);
             }
@@ -413,11 +413,10 @@ mod tests {
 
         let client_lobby = client.world.get_resource::<Lobby>().unwrap();
 
-        assert_eq!(client_lobby.connected_clients.len(), 3);
+        assert_eq!(client_lobby.connected_clients.len(), 2);
         assert!(client_lobby.connected_clients.contains_key(&42069));
         assert!(client_lobby.connected_clients.contains_key(&69));
         assert!(!client_lobby.connected_clients.contains_key(&420));
-
 
         server.world.send_event(ClientDisconnectedEvent{id:69});
         server.update();
@@ -436,7 +435,7 @@ mod tests {
         client.update();
 
         let client_lobby = client.world.get_resource::<Lobby>().unwrap();
-        assert_eq!(client_lobby.connected_clients.len(), 3);
+        assert_eq!(client_lobby.connected_clients.len(), 1);
         assert!(client_lobby.connected_clients.contains_key(&42069));
         assert!(!client_lobby.connected_clients.contains_key(&69));
         assert!(!client_lobby.connected_clients.contains_key(&420));
@@ -458,7 +457,7 @@ mod tests {
         client.update();
 
         let client_lobby = client.world.get_resource::<Lobby>().unwrap();
-        assert_eq!(client_lobby.connected_clients.len(), 3);
+        assert_eq!(client_lobby.connected_clients.len(), 0);
         assert!(!client_lobby.connected_clients.contains_key(&42069));
         assert!(!client_lobby.connected_clients.contains_key(&69));
         assert!(!client_lobby.connected_clients.contains_key(&420));
