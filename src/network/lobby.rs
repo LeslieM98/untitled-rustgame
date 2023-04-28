@@ -1,12 +1,12 @@
 use bevy::prelude::*;
 use bevy::utils::HashMap;
-use bevy_renet::renet::{DefaultChannel, RenetServer};
+use bevy_renet::renet::{DefaultChannel, RenetServer, RenetClient};
 use serde::{Deserialize, Serialize};
 
 use crate::network::server::MAX_CONNECTIONS;
 use crate::network::server::{ClientConnectedEvent, ClientDisconnectedEvent};
 
-use super::packet_communication::{Packet, PacketMetaData, PacketType, ReceivedMessages, Sender};
+use super::packet_communication::{Packet, PacketMetaData, PacketType, Sender};
 use super::remote_player::{spawn_remote_player, PlayerID};
 
 type SpawnFunction = Box<dyn Fn(&mut Commands, u64) -> Entity + Send + Sync>;
@@ -18,8 +18,10 @@ impl Plugin for LobbyClientPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Lobby::default())
             .add_event::<AttachModelToPlayerEvent>()
+            .add_event::<LobbySync>()
             .add_system(client_apply_sync)
-            .add_system(client_attach_model_to_player);
+            .add_system(client_attach_model_to_player)
+            .add_system(client_recv_sync);
     }
 }
 
@@ -128,14 +130,22 @@ fn server_send_sync(lobby: Res<Lobby>, mut server: ResMut<RenetServer>) {
     server.broadcast_message(DefaultChannel::Reliable, serialized);
 }
 
+fn client_recv_sync(mut client: ResMut<RenetClient>, mut event_writer: EventWriter<LobbySync>){
+    while let Some(recv) = client.receive_message(DefaultChannel::Reliable) {
+        let packet = bincode::deserialize::<Packet>(&recv).unwrap();
+        let sync = bincode::deserialize::<LobbySync>(&packet.content).unwrap();
+
+        event_writer.send(sync);
+    }
+}
+
 fn client_apply_sync(
     mut lobby: ResMut<Lobby>,
-    recv_messages: Res<ReceivedMessages>,
+    mut event_reader: EventReader<LobbySync>,
     mut commands: Commands,
     mut model_events: EventWriter<AttachModelToPlayerEvent>,
 ) {
-    let syncs = recv_messages.deserialize::<LobbySync>();
-    for (_, sync) in syncs {
+    for sync in event_reader.iter() {
         for entity in lobby.disconnect_clients(&sync).iter() {
             commands.entity(*entity).despawn();
         }
@@ -242,8 +252,8 @@ mod tests {
         let mut client = App::new();
         client
             .add_event::<AttachModelToPlayerEvent>()
+            .add_event::<LobbySync>()
             .insert_resource(Lobby::default())
-            .insert_resource(ReceivedMessages::default())
             .add_system(client_apply_sync);
         client.update();
 
@@ -251,13 +261,9 @@ mod tests {
         let lobby = client.world.get_resource::<Lobby>().unwrap();
         assert_eq!(lobby.connected_clients.len(), 0);
 
-        let mock_package = Packet::new(&server_lobby.generate_sync_packet(), Sender::Server);
-        client
-            .world
-            .get_resource_mut::<ReceivedMessages>()
-            .unwrap()
-            .recv
-            .insert(LobbySync::get_packet_type(), vec![mock_package]);
+        let mock_package = server_lobby.generate_sync_packet();
+        client.world.send_event(mock_package);
+
 
         client.update();
         let lobby = client.world.get_resource::<Lobby>().unwrap();
@@ -269,13 +275,10 @@ mod tests {
         server_lobby
             .connected_clients
             .insert(420, Entity::from_bits(0));
-        let mock_package = Packet::new(&server_lobby.generate_sync_packet(), Sender::Server);
-        client
-            .world
-            .get_resource_mut::<ReceivedMessages>()
-            .unwrap()
-            .recv
-            .insert(LobbySync::get_packet_type(), vec![mock_package]);
+        let lobby_sync = server_lobby.generate_sync_packet();
+        client.world.send_event(lobby_sync);
+
+
 
         client.update();
         let lobby = client.world.get_resource::<Lobby>().unwrap();
@@ -286,13 +289,9 @@ mod tests {
         server_lobby
             .connected_clients
             .insert(69, Entity::from_bits(0));
-        let mock_package = Packet::new(&server_lobby.generate_sync_packet(), Sender::Server);
-        client
-            .world
-            .get_resource_mut::<ReceivedMessages>()
-            .unwrap()
-            .recv
-            .insert(LobbySync::get_packet_type(), vec![mock_package]);
+        let lobby_sync = server_lobby.generate_sync_packet();
+        client.world.send_event(lobby_sync);
+
 
         client.update();
         let lobby = client.world.get_resource::<Lobby>().unwrap();
@@ -362,8 +361,8 @@ mod tests {
         let mut client = App::new();
         client
             .add_event::<AttachModelToPlayerEvent>()
+            .add_event::<LobbySync>()
             .insert_resource(Lobby::default())
-            .insert_resource(ReceivedMessages::default())
             .add_system(client_apply_sync);
         client.update();
 
@@ -381,13 +380,10 @@ mod tests {
         assert!(server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&69));
         assert!(server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&420));
 
-        let populating_packet = Packet::new(&server.world.get_resource::<Lobby>().unwrap().generate_sync_packet(), Sender::Server);
-        client
-            .world
-            .get_resource_mut::<ReceivedMessages>()
-            .unwrap()
-            .recv
-            .insert(LobbySync::get_packet_type(), vec![populating_packet]);
+
+        let lobby_sync = server.world.get_resource::<Lobby>().unwrap().generate_sync_packet();
+        client.world.send_event(lobby_sync);
+
         client.update();
 
         assert_eq!(client.world.get_resource::<Lobby>().unwrap().connected_clients.len(), 3);
@@ -402,13 +398,8 @@ mod tests {
         assert!(server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&69));
         assert!(!server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&420));
 
-        let disconnecting_packet = Packet::new(&server.world.get_resource::<Lobby>().unwrap().generate_sync_packet(), Sender::Server);
-        client
-            .world
-            .get_resource_mut::<ReceivedMessages>()
-            .unwrap()
-            .recv
-            .insert(LobbySync::get_packet_type(), vec![disconnecting_packet]);
+        let lobby_sync = server.world.get_resource::<Lobby>().unwrap().generate_sync_packet();
+        client.world.send_event(lobby_sync);
         client.update();
 
         let client_lobby = client.world.get_resource::<Lobby>().unwrap();
@@ -424,14 +415,9 @@ mod tests {
         assert!(server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&42069));
         assert!(!server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&69));
         assert!(!server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&420));
-
-        let disconnecting_packet = Packet::new(&server.world.get_resource::<Lobby>().unwrap().generate_sync_packet(), Sender::Server);
-        client
-            .world
-            .get_resource_mut::<ReceivedMessages>()
-            .unwrap()
-            .recv
-            .insert(LobbySync::get_packet_type(), vec![disconnecting_packet]);
+        
+        let lobby_sync = server.world.get_resource::<Lobby>().unwrap().generate_sync_packet();
+        client.world.send_event(lobby_sync);
         client.update();
 
         let client_lobby = client.world.get_resource::<Lobby>().unwrap();
@@ -446,14 +432,9 @@ mod tests {
         assert!(!server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&42069));
         assert!(!server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&69));
         assert!(!server.world.get_resource::<Lobby>().unwrap().connected_clients.contains_key(&420));
-
-        let disconnecting_packet = Packet::new(&server.world.get_resource::<Lobby>().unwrap().generate_sync_packet(), Sender::Server);
-        client
-            .world
-            .get_resource_mut::<ReceivedMessages>()
-            .unwrap()
-            .recv
-            .insert(LobbySync::get_packet_type(), vec![disconnecting_packet]);
+        
+        let lobby_sync = server.world.get_resource::<Lobby>().unwrap().generate_sync_packet();
+        client.world.send_event(lobby_sync);
         client.update();
 
         let client_lobby = client.world.get_resource::<Lobby>().unwrap();

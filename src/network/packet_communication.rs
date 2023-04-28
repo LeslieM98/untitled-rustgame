@@ -176,9 +176,6 @@ pub fn client_recv_packet(
 ) {
     let mut read_data = Vec::new();
 
-    while let Some(recv) = connection.receive_message(DefaultChannel::Reliable) {
-        read_data.push(recv);
-    }
     while let Some(recv) = connection.receive_message(DefaultChannel::Unreliable) {
         read_data.push(recv);
     }
