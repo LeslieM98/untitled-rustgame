@@ -1,11 +1,10 @@
 use bevy::app::App;
 use bevy::log::warn;
 use bevy::prelude::{
-    default, info, Commands, Component, CoreSet, Entity, EventWriter, Handle, IntoSystemConfig,
-    Plugin, Query, Res, Transform, With,
+    info, Commands, Component, CoreSet, Entity, EventWriter, IntoSystemConfig, Plugin, Query, Res,
+    Transform, With,
 };
 use bevy::reflect::erased_serde::__private::serde::{Deserialize, Serialize};
-use bevy::scene::{Scene, SceneBundle};
 
 use crate::actor::{player::PlayerMarker, Actor};
 use crate::network::lobby::Lobby;
@@ -97,21 +96,12 @@ impl PacketMetaData for MultiplePlayerUpdate {
     }
 }
 
-pub fn spawn_remote_player(
-    commands: &mut Commands,
-    client_id: u64,
-    model: Handle<Scene>,
-) -> Entity {
+pub fn spawn_remote_player(commands: &mut Commands, client_id: u64) -> Entity {
     info!("Spawning client {}", client_id);
     let remote_player = Actor::default();
-    let model = SceneBundle {
-        scene: model,
-        ..default()
-    };
     commands
         .spawn(remote_player)
         .insert(PlayerID::new(client_id))
-        .insert(model)
         .id()
 }
 

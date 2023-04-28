@@ -86,7 +86,7 @@ impl Packet {
 
 #[derive(Resource, Debug, Default)]
 pub struct ReceivedMessages {
-    recv: HashMap<PacketType, Vec<Packet>>,
+    pub recv: HashMap<PacketType, Vec<Packet>>,
 }
 
 impl ReceivedMessages {

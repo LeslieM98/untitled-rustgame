@@ -17,7 +17,9 @@ pub struct LobbyClientPlugin;
 impl Plugin for LobbyClientPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Lobby::default())
-            .add_system(client_apply_sync);
+            .add_event::<AttachModelToPlayerEvent>()
+            .add_system(client_apply_sync)
+            .add_system(client_attach_model_to_player);
     }
 }
 
@@ -86,6 +88,11 @@ impl PacketMetaData for LobbySync {
         bincode::serialized_size(self).unwrap().into()
     }
 }
+
+struct AttachModelToPlayerEvent {
+    id: u64,
+}
+
 fn server_client_connected(
     mut lobby: ResMut<Lobby>,
     mut client_connected_events: EventReader<ClientConnectedEvent>,
@@ -125,7 +132,7 @@ fn client_apply_sync(
     mut lobby: ResMut<Lobby>,
     recv_messages: Res<ReceivedMessages>,
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
+    mut model_events: EventWriter<AttachModelToPlayerEvent>,
 ) {
     let syncs = recv_messages.deserialize::<LobbySync>();
     for (_, sync) in syncs {
@@ -135,12 +142,111 @@ fn client_apply_sync(
         for client in sync.connected_clients {
             if let Some(id) = client {
                 if !lobby.connected_clients.contains_key(&id) {
-                    let player_model = asset_server.load("glTF/base model/base_model.gltf#Scene0");
                     lobby
                         .connected_clients
-                        .insert(id, spawn_remote_player(&mut commands, id, player_model));
+                        .insert(id, spawn_remote_player(&mut commands, id));
+                    model_events.send(AttachModelToPlayerEvent { id })
                 }
             }
         }
+    }
+}
+
+fn client_attach_model_to_player(
+    lobby: Res<Lobby>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut event_reader: EventReader<AttachModelToPlayerEvent>,
+) {
+    if !event_reader.is_empty() {
+        let player_model = asset_server.load("glTF/base model/base_model.gltf#Scene0");
+        for event in event_reader.iter() {
+            lobby.connected_clients.get(&event.id).map(|x| {
+                commands.entity(*x).insert(SceneBundle {
+                    scene: player_model.clone(),
+                    ..default()
+                });
+            });
+        }
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn correct_sync_package() {
+        let mut lobby = Lobby::default();
+        lobby.connected_clients.insert(0, Entity::from_bits(0));
+        lobby.connected_clients.insert(420, Entity::from_bits(1));
+        lobby.connected_clients.insert(69, Entity::from_bits(2));
+
+        let subject = lobby.generate_sync_packet();
+
+        assert_eq!(subject.connected_clients.iter().flatten().count(), 3);
+        assert!(subject.connected_clients.contains(&Some(0)));
+        assert!(subject.connected_clients.contains(&Some(420)));
+        assert!(subject.connected_clients.contains(&Some(69)));
+    }
+
+    #[test]
+    fn simulate_connecting_player_on_server_side() {
+        let mut server = App::new();
+        server
+            .insert_resource(Lobby::default())
+            .add_system(server_client_connected)
+            .add_system(server_client_disconnected)
+            .add_event::<ClientConnectedEvent>()
+            .add_event::<ClientDisconnectedEvent>();
+        server.update();
+        let entity_count = server.world.entities().len();
+
+        assert!(server
+            .world
+            .get_resource::<Lobby>()
+            .unwrap()
+            .connected_clients
+            .is_empty());
+
+        server.world.send_event(ClientConnectedEvent { id: 42069 });
+        server.update();
+
+        let lobby = server.world.get_resource::<Lobby>().unwrap();
+        assert!(!lobby.connected_clients.is_empty());
+        assert!(lobby.connected_clients.contains_key(&42069));
+        assert_eq!(server.world.entities().len(), entity_count + 1)
+    }
+
+    #[test]
+    fn simulate_connecting_player_on_client_side() {
+        let mut server_lobby = Lobby::default();
+        server_lobby
+            .connected_clients
+            .insert(42069, Entity::from_bits(0));
+        let mut client = App::new();
+        client
+            .add_event::<AttachModelToPlayerEvent>()
+            .insert_resource(Lobby::default())
+            .insert_resource(ReceivedMessages::default())
+            .add_system(client_apply_sync);
+        client.update();
+
+        let mock_package = Packet::new(&server_lobby.generate_sync_packet(), Sender::Server);
+
+        let lobby = client.world.get_resource::<Lobby>().unwrap();
+        assert_eq!(lobby.connected_clients.len(), 0);
+
+        client
+            .world
+            .get_resource_mut::<ReceivedMessages>()
+            .unwrap()
+            .recv
+            .insert(LobbySync::get_packet_type(), vec![mock_package]);
+
+        client.update();
+        let lobby = client.world.get_resource::<Lobby>().unwrap();
+
+        assert_eq!(lobby.connected_clients.len(), 1);
+        assert!(lobby.connected_clients.contains_key(&42069));
     }
 }
