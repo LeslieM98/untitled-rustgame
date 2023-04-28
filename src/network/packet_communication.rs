@@ -54,11 +54,12 @@ pub struct Packet {
     pub packet_type: PacketType,
     pub content_size: u128,
     pub sender: Sender,
+    pub target: Target,
     pub content: Vec<u8>,
 }
 
 impl Packet {
-    pub fn new<T>(content: &T, sender: Sender) -> Packet
+    pub fn new<T>(content: &T, sender: Sender, target: Target) -> Packet
     where
         T: PacketMetaData + Serialize,
     {
@@ -68,20 +69,28 @@ impl Packet {
             packet_type: T::get_packet_type(),
             content_size: serialized_content.len() as u128,
             sender,
+            target,
             content: serialized_content,
         }
     }
 
-    fn new_server_packet<T>(content: &T) -> Packet
+    fn new_server_packet<T>(content: &T, target: Target) -> Packet
     where
         T: PacketMetaData + Serialize,
     {
-        Self::new(content, Sender::Server)
+        Self::new(content, Sender::Server, target)
     }
 
     fn current_protocol_version() -> u16 {
         0
     }
+}
+
+#[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq, Eq)]
+pub enum Target {
+    Broadcast,
+    Server,
+    Client(u64),
 }
 
 #[derive(Resource, Debug, Default)]
@@ -160,7 +169,7 @@ fn client_send_packet<T>(
             return;
         }
 
-        let packet = Packet::new(content, Sender::Client(client_id.id));
+        let packet = Packet::new(content, Sender::Client(client_id.id), Target::Server);
         if let Ok(serialized) = bincode::serialize(&packet).map_err(|err| warn!("{}", err)) {
             connection.send_message(DefaultChannel::Unreliable, serialized);
         }
@@ -245,7 +254,8 @@ pub fn server_broadcast_packet<T>(
 {
     for content in content_events.iter() {
         if let Ok(serialized) =
-            bincode::serialize(&Packet::new_server_packet(content)).map_err(|err| warn!("{}", err))
+            bincode::serialize(&Packet::new_server_packet(content, Target::Broadcast))
+                .map_err(|err| warn!("{}", err))
         {
             connection.broadcast_message(DefaultChannel::Unreliable, serialized);
         }
