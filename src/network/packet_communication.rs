@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use bevy::{prelude::*, utils::HashMap};
+use bevy::{ecs::schedule::SystemConfig, prelude::*, utils::HashMap};
 use bevy_renet::renet::{DefaultChannel, RenetClient, RenetServer};
 use serde::{Deserialize, Serialize};
 
@@ -18,7 +18,7 @@ pub enum Sender {
 impl Plugin for NetworkProtocolServerPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(clear_messages.in_base_set(CoreSet::First))
-            .add_system(server_recv_packet)
+            .add_system(server_populate_received_messages)
             .insert_resource(ReceivedMessages::default());
     }
 }
@@ -26,7 +26,7 @@ impl Plugin for NetworkProtocolServerPlugin {
 impl Plugin for NetworkProtocolClientPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(clear_messages.in_base_set(CoreSet::First))
-            .add_system(client_recv_packet)
+            .add_system(client_populate_received_messages)
             .insert_resource(ReceivedMessages::default());
     }
 }
@@ -175,7 +175,7 @@ fn client_send_packet<T>(
         }
     }
 }
-fn server_recv_packet(
+fn server_populate_received_messages(
     mut connection: ResMut<RenetServer>,
     lobby: Res<Lobby>,
     mut received_messages: ResMut<ReceivedMessages>,
@@ -209,7 +209,7 @@ fn server_recv_packet(
     }
 }
 
-pub fn client_recv_packet(
+fn client_populate_received_messages(
     mut connection: ResMut<RenetClient>,
     mut received_messages: ResMut<ReceivedMessages>,
 ) {
@@ -264,4 +264,23 @@ pub fn server_broadcast_packet<T>(
 
 fn clear_messages(mut recv_messages: ResMut<ReceivedMessages>) {
     recv_messages.recv.clear();
+}
+
+fn client_receive_network_message<T>(
+    mut event_writer: EventWriter<T>,
+    received_messages: Res<ReceivedMessages>,
+) where
+    T: Sync + Send + PacketMetaData + Debug + for<'a> Deserialize<'a>,
+{
+    let events = received_messages.deserialize::<T>();
+    for (_sender, event) in events {
+        event_writer.send(event);
+    }
+}
+
+pub fn client_recv_code<T>() -> SystemConfig
+where
+    T: Sync + Send + PacketMetaData + Debug + for<'a> Deserialize<'a>,
+{
+    client_receive_network_message::<T>.after(client_populate_received_messages)
 }

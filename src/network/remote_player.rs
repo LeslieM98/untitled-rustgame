@@ -1,8 +1,8 @@
 use bevy::app::App;
 use bevy::log::warn;
 use bevy::prelude::{
-    info, Commands, Component, CoreSet, Entity, EventWriter, IntoSystemConfig, Plugin, Query, Res,
-    Transform, With,
+    info, Commands, Component, CoreSet, Entity, EventReader, EventWriter, IntoSystemConfig, Plugin,
+    Query, Res, Transform, With,
 };
 use bevy::reflect::erased_serde::__private::serde::{Deserialize, Serialize};
 
@@ -12,8 +12,8 @@ use crate::network::server::MAX_CONNECTIONS;
 
 use super::client::ClientID;
 use super::packet_communication::{
-    client_send_packet_unreliable, server_broadcast_packet, BroadcastPacket, PacketMetaData, PacketType,
-    ReceivedMessages, Sender,
+    client_recv_code, client_send_packet_unreliable, server_broadcast_packet, BroadcastPacket,
+    PacketMetaData, PacketType, ReceivedMessages,
 };
 use crate::network::packet_communication::Sender::Client;
 
@@ -22,9 +22,13 @@ pub struct ClientPlayerSyncPlugin;
 impl Plugin for ClientPlayerSyncPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<SinglePlayerUpdate>()
+            .add_event::<MultiplePlayerUpdate>()
             .add_system(sync_client_to_server)
             .add_system(receive_server_to_client_sync)
-            .add_system(client_send_packet_unreliable::<SinglePlayerUpdate>.in_base_set(CoreSet::Last));
+            .add_system(
+                client_send_packet_unreliable::<SinglePlayerUpdate>.in_base_set(CoreSet::Last),
+            )
+            .add_system(client_recv_code::<MultiplePlayerUpdate>());
     }
 }
 
@@ -168,18 +172,17 @@ fn send_server_to_client_sync(
 }
 
 fn receive_server_to_client_sync(
-    recv_messages: Res<ReceivedMessages>,
+    //recv_messages: Res<ReceivedMessages>,
+    mut messages: EventReader<MultiplePlayerUpdate>,
     lobby: Res<Lobby>,
     mut player_query: Query<&mut Transform>,
     client_id: Res<ClientID>,
 ) {
-    let messages = recv_messages.deserialize::<MultiplePlayerUpdate>();
-
-    for (sender, message) in messages {
-        if sender != Sender::Server {
+    for message in messages.iter() {
+        /* if sender != Sender::Server {
             warn! {"Client received a package sent by a Client"};
             continue;
-        }
+        }*/
 
         for updates in message.content {
             let (player_id, update) = match updates {
