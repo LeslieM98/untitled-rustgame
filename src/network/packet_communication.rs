@@ -219,6 +219,10 @@ fn client_populate_received_messages(
         read_data.push(recv);
     }
 
+    while let Some(recv) = connection.receive_message(DefaultChannel::Reliable) {
+        read_data.push(recv);
+    }
+
     for recv in read_data {
         if let Ok(deserialized) =
             bincode::deserialize::<Packet>(&recv).map_err(|err| warn!("{}", err))
@@ -246,9 +250,10 @@ fn client_populate_received_messages(
     }
 }
 
-pub fn server_broadcast_packet<T>(
-    mut connection: ResMut<RenetServer>,
-    mut content_events: EventReader<T>,
+fn server_broadcast_packet<T>(
+    connection: &mut ResMut<RenetServer>,
+    content_events: &mut EventReader<T>,
+    channel_id: u8,
 ) where
     T: BroadcastPacket + Serialize,
 {
@@ -257,9 +262,35 @@ pub fn server_broadcast_packet<T>(
             bincode::serialize(&Packet::new_server_packet(content, Target::Broadcast))
                 .map_err(|err| warn!("{}", err))
         {
-            connection.broadcast_message(DefaultChannel::Unreliable, serialized);
+            connection.broadcast_message(channel_id, serialized);
         }
     }
+}
+
+pub fn server_broadcast_packet_reliable<T>(
+    mut connection: ResMut<RenetServer>,
+    mut content_events: EventReader<T>,
+) where
+    T: BroadcastPacket + Serialize,
+{
+    server_broadcast_packet(
+        &mut connection,
+        &mut content_events,
+        DefaultChannel::Reliable.into(),
+    );
+}
+
+pub fn server_broadcast_packet_unreliable<T>(
+    mut connection: ResMut<RenetServer>,
+    mut content_events: EventReader<T>,
+) where
+    T: BroadcastPacket + Serialize,
+{
+    server_broadcast_packet(
+        &mut connection,
+        &mut content_events,
+        DefaultChannel::Unreliable.into(),
+    );
 }
 
 fn clear_messages(mut recv_messages: ResMut<ReceivedMessages>) {

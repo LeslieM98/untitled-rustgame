@@ -12,8 +12,8 @@ use crate::network::server::MAX_CONNECTIONS;
 
 use super::client::ClientID;
 use super::packet_communication::{
-    client_recv_code, client_send_packet_unreliable, server_broadcast_packet, BroadcastPacket,
-    PacketMetaData, PacketType, ReceivedMessages,
+    client_recv_code, client_send_packet_unreliable, server_broadcast_packet_unreliable,
+    BroadcastPacket, PacketMetaData, PacketType, ReceivedMessages,
 };
 use crate::network::packet_communication::Sender::Client;
 
@@ -37,7 +37,10 @@ pub struct ServerPlayerSyncPlugin;
 impl Plugin for ServerPlayerSyncPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<MultiplePlayerUpdate>()
-            .add_system(server_broadcast_packet::<MultiplePlayerUpdate>.in_base_set(CoreSet::Last))
+            .add_system(
+                server_broadcast_packet_unreliable::<MultiplePlayerUpdate>
+                    .in_base_set(CoreSet::Last),
+            )
             .add_system(receive_client_to_server_sync)
             .add_system(send_server_to_client_sync);
     }

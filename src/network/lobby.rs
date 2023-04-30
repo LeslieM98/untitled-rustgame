@@ -1,13 +1,16 @@
 use bevy::prelude::*;
 use bevy::utils::HashMap;
-use bevy_renet::renet::{DefaultChannel, RenetClient, RenetServer};
+use bevy_renet::renet::{DefaultChannel, RenetServer};
 use serde::{Deserialize, Serialize};
 
 use crate::network::server::MAX_CONNECTIONS;
 use crate::network::server::{ClientConnectedEvent, ClientDisconnectedEvent};
 
 use super::client::ClientID;
-use super::packet_communication::{Packet, PacketMetaData, PacketType, Sender, Target};
+use super::packet_communication::{
+    client_recv_code, server_broadcast_packet_reliable, BroadcastPacket, Packet, PacketMetaData,
+    PacketType, Sender, Target,
+};
 use super::remote_player::{spawn_remote_player, PlayerID};
 
 type SpawnFunction = Box<dyn Fn(&mut Commands, u64) -> Entity + Send + Sync>;
@@ -22,7 +25,7 @@ impl Plugin for LobbyClientPlugin {
             .add_event::<LobbySync>()
             .add_system(client_apply_sync)
             .add_system(client_attach_model_to_player)
-            .add_system(client_recv_sync);
+            .add_system(client_recv_code::<LobbySync>());
     }
 }
 
@@ -32,14 +35,14 @@ pub struct LobbyServerPlugin;
 impl Plugin for LobbyServerPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Lobby::default())
+            .add_event::<LobbySync>()
             .add_system(server_client_connected)
             .add_system(server_client_disconnected)
-            .add_system(
-                server_send_sync
+            .add_system(server_send_sync_packet
                     .after(server_client_connected)
                     .after(server_client_disconnected)
                     .run_if(|lobby: Res<Lobby>| lobby.is_changed()),
-            );
+            ).add_system(server_broadcast_packet_reliable::<LobbySync>);
     }
 }
 
@@ -92,6 +95,8 @@ impl PacketMetaData for LobbySync {
     }
 }
 
+impl BroadcastPacket for LobbySync {}
+
 struct AttachModelToPlayerEvent {
     id: u64,
 }
@@ -135,13 +140,8 @@ fn server_send_sync(lobby: Res<Lobby>, mut server: ResMut<RenetServer>) {
     server.broadcast_message(DefaultChannel::Reliable, serialized);
 }
 
-fn client_recv_sync(mut client: ResMut<RenetClient>, mut event_writer: EventWriter<LobbySync>) {
-    while let Some(recv) = client.receive_message(DefaultChannel::Reliable) {
-        let packet = bincode::deserialize::<Packet>(&recv).unwrap();
-        let sync = bincode::deserialize::<LobbySync>(&packet.content).unwrap();
-
-        event_writer.send(sync);
-    }
+fn server_send_sync_packet(lobby: Res<Lobby>, mut event_writer:  EventWriter<LobbySync>) {
+    event_writer.send(lobby.generate_sync_packet());
 }
 
 fn client_apply_sync(
