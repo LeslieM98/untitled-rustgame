@@ -1,8 +1,8 @@
 use bevy::app::App;
 use bevy::log::warn;
 use bevy::prelude::{
-    info, Commands, Component, CoreSet, Entity, EventReader, EventWriter, IntoSystemConfig, Plugin,
-    Query, Res, Transform, With,
+    info, Commands, CoreSet, Entity, EventReader, EventWriter, IntoSystemConfig, Plugin, Query,
+    Res, Transform, With,
 };
 use bevy::reflect::erased_serde::__private::serde::{Deserialize, Serialize};
 
@@ -45,18 +45,6 @@ impl Plugin for ServerPlayerSyncPlugin {
             .add_system(send_server_to_client_sync);
     }
 }
-
-#[derive(Component, Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
-pub struct PlayerID {
-    id: u64,
-}
-
-impl PlayerID {
-    pub fn new(id: u64) -> Self {
-        Self { id }
-    }
-}
-
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 struct SinglePlayerUpdate {
     transform: Transform,
@@ -80,12 +68,12 @@ impl PacketMetaData for SinglePlayerUpdate {
 
 #[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize, Default)]
 struct MultiplePlayerUpdate {
-    content: [Option<(PlayerID, SinglePlayerUpdate)>; MAX_CONNECTIONS],
+    content: [Option<(ClientID, SinglePlayerUpdate)>; MAX_CONNECTIONS],
 }
 
 impl MultiplePlayerUpdate {
     pub fn new(
-        content: [Option<(PlayerID, SinglePlayerUpdate)>; MAX_CONNECTIONS],
+        content: [Option<(ClientID, SinglePlayerUpdate)>; MAX_CONNECTIONS],
     ) -> MultiplePlayerUpdate {
         Self { content }
     }
@@ -108,7 +96,7 @@ pub fn spawn_remote_player(commands: &mut Commands, client_id: u64) -> Entity {
     let remote_player = Actor::default();
     commands
         .spawn(remote_player)
-        .insert(PlayerID::new(client_id))
+        .insert(ClientID::new(client_id))
         .id()
 }
 
@@ -165,7 +153,7 @@ fn receive_client_to_server_sync(
 
 fn send_server_to_client_sync(
     mut event_writer: EventWriter<MultiplePlayerUpdate>,
-    player_query: Query<(&PlayerID, &Transform)>,
+    player_query: Query<(&ClientID, &Transform)>,
 ) {
     let mut player_update = MultiplePlayerUpdate::default();
     for (i, (player_id, transform)) in player_query.iter().enumerate() {
@@ -238,11 +226,11 @@ mod tests {
     }
 
     fn generate_random_multiple_player_update_data(
-    ) -> [Option<(PlayerID, SinglePlayerUpdate)>; MAX_CONNECTIONS] {
+    ) -> [Option<(ClientID, SinglePlayerUpdate)>; MAX_CONNECTIONS] {
         let mut data = [None; MAX_CONNECTIONS];
         for i in 0..MAX_CONNECTIONS {
             data[i] = Some((
-                PlayerID::new(i.try_into().unwrap()),
+                ClientID::new(i.try_into().unwrap()),
                 generate_random_single_player_update(),
             ));
         }

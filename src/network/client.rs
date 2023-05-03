@@ -3,6 +3,7 @@ use crate::network::remote_player::ClientPlayerSyncPlugin;
 use crate::network::*;
 use bevy_renet::renet::{ClientAuthentication, RenetClient};
 use bevy_renet::RenetClientPlugin;
+use serde::{Deserialize, Serialize};
 use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -52,7 +53,7 @@ impl ClientPlugin {
     }
 }
 
-#[derive(Resource)]
+#[derive(Resource, Component, PartialEq, Eq, Debug, Serialize, Deserialize, Copy, Clone)]
 pub struct ClientID {
     pub id: u64,
 }

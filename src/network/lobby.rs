@@ -11,7 +11,7 @@ use super::packet_communication::{
     client_recv_code, server_broadcast_packet_reliable, BroadcastPacket, Packet, PacketMetaData,
     PacketType, Sender, Target,
 };
-use super::remote_player::{spawn_remote_player, PlayerID};
+use super::remote_player::spawn_remote_player;
 
 type SpawnFunction = Box<dyn Fn(&mut Commands, u64) -> Entity + Send + Sync>;
 
@@ -38,11 +38,13 @@ impl Plugin for LobbyServerPlugin {
             .add_event::<LobbySync>()
             .add_system(server_client_connected)
             .add_system(server_client_disconnected)
-            .add_system(server_send_sync_packet
-                            .after(server_client_connected)
-                            .after(server_client_disconnected)
-                            .run_if(|lobby: Res<Lobby>| lobby.is_changed()),
-            ).add_system(server_broadcast_packet_reliable::<LobbySync>);
+            .add_system(
+                server_send_sync_packet
+                    .after(server_client_connected)
+                    .after(server_client_disconnected)
+                    .run_if(|lobby: Res<Lobby>| lobby.is_changed()),
+            )
+            .add_system(server_broadcast_packet_reliable::<LobbySync>);
     }
 }
 
@@ -109,7 +111,7 @@ fn server_client_connected(
     for event in client_connected_events.iter() {
         let entity = commands
             .spawn(TransformBundle::default())
-            .insert(PlayerID::new(event.id))
+            .insert(ClientID::new(event.id))
             .id();
         lobby.connected_clients.insert(event.id, entity);
     }
@@ -473,7 +475,9 @@ mod tests {
         client.update();
 
         server.update();
-        server.world.send_event(ClientConnectedEvent { id: simulated_client_id });
+        server.world.send_event(ClientConnectedEvent {
+            id: simulated_client_id,
+        });
         server.update();
         server.world.send_event(ClientConnectedEvent { id: 69 });
         server.update();
@@ -586,7 +590,9 @@ mod tests {
         let client_lobby = client.world.get_resource::<Lobby>().unwrap();
 
         assert_eq!(client_lobby.connected_clients.len(), 1);
-        assert!(!client_lobby.connected_clients.contains_key(&simulated_client_id));
+        assert!(!client_lobby
+            .connected_clients
+            .contains_key(&simulated_client_id));
         assert!(client_lobby.connected_clients.contains_key(&69));
         assert!(!client_lobby.connected_clients.contains_key(&420));
 
@@ -630,7 +636,9 @@ mod tests {
 
         let client_lobby = client.world.get_resource::<Lobby>().unwrap();
         assert_eq!(client_lobby.connected_clients.len(), 0);
-        assert!(!client_lobby.connected_clients.contains_key(&simulated_client_id));
+        assert!(!client_lobby
+            .connected_clients
+            .contains_key(&simulated_client_id));
         assert!(!client_lobby.connected_clients.contains_key(&69));
         assert!(!client_lobby.connected_clients.contains_key(&420));
 
@@ -676,7 +684,9 @@ mod tests {
 
         let client_lobby = client.world.get_resource::<Lobby>().unwrap();
         assert_eq!(client_lobby.connected_clients.len(), 0);
-        assert!(!client_lobby.connected_clients.contains_key(&simulated_client_id));
+        assert!(!client_lobby
+            .connected_clients
+            .contains_key(&simulated_client_id));
         assert!(!client_lobby.connected_clients.contains_key(&69));
         assert!(!client_lobby.connected_clients.contains_key(&420));
     }
