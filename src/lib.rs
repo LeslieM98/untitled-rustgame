@@ -8,11 +8,8 @@ use std::f32::consts::PI;
 
 pub mod actor;
 pub mod debug;
-pub mod game_client;
-pub mod gamer_server;
-pub mod network;
-pub mod player_ui;
 pub mod settings;
+pub mod game;
 
 pub fn load_debug_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
     let my_gltf = asset_server.load("glTF/Debug_Scene.gltf#Scene0");

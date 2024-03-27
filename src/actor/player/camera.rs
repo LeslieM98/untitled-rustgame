@@ -31,7 +31,7 @@ pub fn spawn(commands: &mut Commands) -> Entity {
 pub fn orbit_camera(
     primary_window: Query<&Window, With<PrimaryWindow>>,
     mut mouse_motion_events: EventReader<MouseMotion>,
-    input_mouse: Res<Input<MouseButton>>,
+    input_mouse: Res<ButtonInput<MouseButton>>,
     mut camera_base: Query<&mut Transform, With<CameraBaseNodeMarker>>,
     mut player: Query<&mut Transform, (With<PlayerMarker>, Without<CameraBaseNodeMarker>)>,
 ) {
@@ -42,7 +42,7 @@ pub fn orbit_camera(
             .get_single()
             .expect("No primary window found");
 
-        let mouse_delta: Vec2 = mouse_motion_events.iter().map(|x| x.delta).sum();
+        let mouse_delta: Vec2 = mouse_motion_events.read().map(|x| x.delta).sum();
         let window_size = Vec2::new(window.width(), window.height());
 
         // up down
@@ -83,7 +83,7 @@ pub fn camera_scroll(
     const MIN_DISTANCE: f32 = 3.0;
     const MAX_DISTANCE: f32 = 20.0;
     if !scroll_events.is_empty() {
-        let delta: f32 = scroll_events.iter().map(|event| event.y).sum();
+        let delta: f32 = scroll_events.read().map(|event| event.y).sum();
         for mut camera_transform in &mut query {
             let mut new_value = camera_transform.translation.z + -delta;
             new_value = if new_value < MIN_DISTANCE {

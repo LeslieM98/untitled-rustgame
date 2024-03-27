@@ -12,23 +12,23 @@ pub fn move_player(
         for mut transform in query.iter_mut() {
             let mut direction = Vec3::ZERO;
 
-            if input.pressed(MovementAction::Forward) {
-                direction += transform.forward();
+            if input.pressed(&MovementAction::Forward) {
+                direction += *transform.forward();
             }
-            if input.pressed(MovementAction::Backward) {
-                direction += transform.back();
+            if input.pressed(&MovementAction::Backward) {
+                direction += *transform.back();
             }
-            if input.pressed(MovementAction::Left) {
-                direction += transform.left();
+            if input.pressed(&MovementAction::Left) {
+                direction += *transform.left();
             }
-            if input.pressed(MovementAction::Right) {
-                direction += transform.right();
+            if input.pressed(&MovementAction::Right) {
+                direction += *transform.right();
             }
-            if input.pressed(MovementAction::Jump) {
-                direction += transform.up();
+            if input.pressed(&MovementAction::Jump) {
+                direction += *transform.up();
             }
-            if input.pressed(MovementAction::Crouch) {
-                direction += transform.down();
+            if input.pressed(&MovementAction::Crouch) {
+                direction += *transform.down();
             }
 
             if direction != Vec3::ZERO {

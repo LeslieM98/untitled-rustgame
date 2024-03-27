@@ -8,7 +8,7 @@ pub struct EnemyPlugin;
 
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(AIPlugin);
+        app.add_plugins(AIPlugin);
     }
 }
 
@@ -36,7 +36,7 @@ impl Enemy {
         });
 
         let pbr = PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Capsule::default())),
+            mesh: meshes.add(Mesh::from(Capsule3d::default())),
             material: material_handle,
             transform: pos,
             ..default()

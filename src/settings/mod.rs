@@ -8,6 +8,6 @@ pub struct SettingsPlugin;
 
 impl Plugin for SettingsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(SettingsControlsPlugin);
+        app.add_plugins(SettingsControlsPlugin);
     }
 }

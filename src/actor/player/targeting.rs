@@ -3,7 +3,7 @@ use crate::actor::target::Target;
 use bevy::prelude::*;
 
 pub fn deselect_target(
-    keys: Res<Input<KeyCode>>,
+    keys: Res<ButtonInput<KeyCode>>,
     mut player_query: Query<&mut Target, With<PlayerMarker>>,
 ) {
     if keys.just_pressed(KeyCode::Escape) {

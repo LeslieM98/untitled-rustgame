@@ -1,16 +1,15 @@
 use crate::actor::npc::NPCMarker;
 use crate::actor::player::PlayerMarker;
 use bevy::prelude::*;
-use stats_and_abilities_system::prelude::Stats;
 
 pub struct AIPlugin;
 
 impl Plugin for AIPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(init.in_base_set(StartupSet::PostStartup))
-            .add_system(work_follow_main_task_rotation)
-            .add_system(work_move_to_sub_task)
-            .add_system(follow_main_task_movement_sub_task_planning);
+        app.add_systems(PostStartup, init)
+            .add_systems(Update, work_follow_main_task_rotation)
+            .add_systems(Update, work_move_to_sub_task)
+            .add_systems(Update, follow_main_task_movement_sub_task_planning);
     }
 }
 
@@ -50,7 +49,7 @@ fn work_follow_main_task_rotation(
             let mut npc_transform = transforms.get_mut(npc).expect("Cannot find NPC");
 
             let (y_rot, _, _) = npc_transform
-                .looking_at(target_translation, npc_transform.up())
+                .looking_at(target_translation, *npc_transform.up())
                 .rotation
                 .to_euler(EULER);
 
@@ -76,11 +75,11 @@ fn follow_main_task_movement_sub_task_planning(
 }
 
 fn work_move_to_sub_task(
-    npc_query: Query<(Entity, &Stats, &AIMovementTaskQueue)>,
+    npc_query: Query<(Entity, &AIMovementTaskQueue)>,
     mut translation_query: Query<&mut Transform>,
     time: Res<Time>,
 ) {
-    for (npc, _, task_queue) in npc_query.iter() {
+    for (npc, task_queue) in npc_query.iter() {
         let first_task = task_queue.sub_task_queue.first();
         if let Some(SubTask::KeepDistance(target_translation, distance)) = first_task {
             let mut npc_transform = translation_query.get_mut(npc).expect("Could not find NPC");

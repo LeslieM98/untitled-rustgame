@@ -4,7 +4,6 @@ pub mod target;
 
 use crate::actor::target::{Target, Targetable};
 use bevy::prelude::*;
-use stats_and_abilities_system::prelude::{Health, Stats};
 use std::time::SystemTime;
 
 #[derive(Component)]
@@ -59,8 +58,6 @@ impl Default for Name {
 pub struct Actor {
     pub name: Name,
     pub pbr: PbrBundle,
-    pub stats: Stats,
-    pub health: Health,
     pub combat_status: CombatStatus,
     pub target: Target,
     targetable: Targetable,
