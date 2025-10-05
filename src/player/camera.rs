@@ -8,19 +8,25 @@ pub struct PlayerCameraMarker;
 #[derive(Component)]
 pub struct CameraBaseNodeMarker;
 
-pub fn spawn(commands: &mut Commands) -> Entity {
+pub fn init_camera(mut commands: Commands,
+                   mut player: Query<Entity, With<PlayerMarker>>){
+
+    let player_entity = player.single().unwrap();
+
     let camera_entity = commands
         .spawn((Transform::from_xyz(0.0, 0.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
                 Camera3d::default()))
         .id();
 
-    commands.spawn((
+    let orbital_camera = commands.spawn((
             Transform::default(),
             CameraBaseNodeMarker,
             Visibility::default(),
         ))
         .add_child(camera_entity)
-        .id()
+        .id();
+
+    commands.entity(player_entity).add_child(orbital_camera);
 }
 
 pub fn orbit_camera(

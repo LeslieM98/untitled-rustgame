@@ -15,7 +15,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_systems(Startup, spawn_player)
-            .add_systems(PostStartup, init_camera)
+            .add_systems(PostStartup, camera::init_camera)
             .add_systems(PostStartup, init_mesh)
             .add_systems(Update, move_player.in_set(PlayerControlSet))
             .add_systems(Update, (orbit_camera, camera_scroll).in_set(PlayerControlSet));
@@ -33,13 +33,6 @@ impl Default for PlayerMarker{
 
 pub fn spawn_player(mut commands: Commands){
     commands.spawn((PlayerMarker(0), Transform::default()));
-}
-
-pub fn init_camera(mut commands: Commands,
-                   mut player: Query<Entity, With<PlayerMarker>>){
-    let player_entity = player.single().unwrap();
-    let camera_entity = camera::spawn(&mut commands);
-    commands.entity(player_entity).add_child(camera_entity);
 }
 
 pub fn init_mesh(mut commands: Commands,
