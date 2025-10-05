@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 use bevy::asset::AssetServer;
-use bevy::math::{Quat, Vec3};
 use bevy::prelude::*;
 use std::f32::consts::PI;
 

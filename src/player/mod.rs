@@ -39,7 +39,7 @@ pub fn init_mesh(mut commands: Commands,
                     mut meshes: ResMut<Assets<Mesh>>,
                     asset_server: Res<AssetServer>,
                     mut materials: ResMut<Assets<StandardMaterial>>,
-                    mut player: Query<Entity, With<PlayerMarker>>){
+                    player: Query<Entity, With<PlayerMarker>>){
     let player_entity = player.single().unwrap();
     let tex_handle = asset_server.load("PNG/Purple/texture_04.png");
 

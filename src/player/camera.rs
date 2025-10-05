@@ -9,7 +9,7 @@ pub struct PlayerCameraMarker;
 pub struct CameraBaseNodeMarker;
 
 pub fn init_camera(mut commands: Commands,
-                   mut player: Query<Entity, With<PlayerMarker>>){
+                   player: Query<Entity, With<PlayerMarker>>){
 
     let player_entity = player.single().unwrap();
 
@@ -31,7 +31,7 @@ pub fn init_camera(mut commands: Commands,
 
 pub fn orbit_camera(
     primary_window: Query<&Window, With<PrimaryWindow>>,
-    mut mouse_motion_events: EventReader<MouseMotion>,
+    mut mouse_motion_events: MessageReader<MouseMotion>,
     input_mouse: Res<ButtonInput<MouseButton>>,
     mut camera_base: Query<&mut Transform, With<CameraBaseNodeMarker>>,
     mut player: Query<&mut Transform, (With<PlayerMarker>, Without<CameraBaseNodeMarker>)>,
@@ -77,7 +77,7 @@ pub fn orbit_camera(
 
 pub fn camera_scroll(
     mut query: Query<&mut Transform, With<PlayerCameraMarker>>,
-    mut scroll_events: EventReader<MouseWheel>,
+    mut scroll_events: MessageReader<MouseWheel>,
 ) {
     const MIN_DISTANCE: f32 = 3.0;
     const MAX_DISTANCE: f32 = 20.0;
