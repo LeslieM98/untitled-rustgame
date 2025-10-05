@@ -3871,14 +3871,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c20b6793b5c2fa6553b250154b78d6d0db37e72700ae35fad9387a46f487c97"
 
 [[package]]
-name = "rust-game"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "leafwing-input-manager",
-]
-
-[[package]]
 name = "rustc-hash"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4554,6 +4546,14 @@ name = "unicode-xid"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
+
+[[package]]
+name = "untitled-rustgame"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "leafwing-input-manager",
+]
 
 [[package]]
 name = "uuid"
