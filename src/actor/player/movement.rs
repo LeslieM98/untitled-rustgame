@@ -33,7 +33,7 @@ pub fn move_player(
 
             if direction != Vec3::ZERO {
                 direction = direction.normalize();
-                transform.translation += direction * 6.0 * time.delta_seconds();
+                transform.translation += direction * 6.0 * time.delta_secs();
             }
         }
     }

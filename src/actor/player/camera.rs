@@ -8,21 +8,15 @@ pub struct PlayerCameraMarker;
 pub struct CameraBaseNodeMarker;
 
 pub fn spawn(commands: &mut Commands) -> Entity {
-    // Camera
-    let camera = (
-        Camera3dBundle {
-            transform: Transform::from_xyz(0.0, 0.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-            ..default()
-        },
-        PlayerCameraMarker,
-    );
-    let camera_entity = commands.spawn(camera).id();
+    let camera_entity = commands
+        .spawn((Transform::from_xyz(0.0, 0.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+                Camera3d::default()))
+        .id();
 
-    commands
-        .spawn((
-            TransformBundle::default(),
+    commands.spawn((
+            Transform::default(),
             CameraBaseNodeMarker,
-            VisibilityBundle::default(),
+            Visibility::default(),
         ))
         .add_child(camera_entity)
         .id()
@@ -36,11 +30,9 @@ pub fn orbit_camera(
     mut player: Query<&mut Transform, (With<PlayerMarker>, Without<CameraBaseNodeMarker>)>,
 ) {
     if input_mouse.pressed(MouseButton::Left) || input_mouse.pressed(MouseButton::Right) {
-        let mut camera_transform = camera_base.get_single_mut().unwrap();
-        let mut player_transform = player.get_single_mut().unwrap();
-        let window = primary_window
-            .get_single()
-            .expect("No primary window found");
+        let mut camera_transform = camera_base.single_mut().unwrap();
+        let mut player_transform = player.single_mut().unwrap();
+        let window = primary_window.single().expect("No primary window found");
 
         let mouse_delta: Vec2 = mouse_motion_events.read().map(|x| x.delta).sum();
         let window_size = Vec2::new(window.width(), window.height());

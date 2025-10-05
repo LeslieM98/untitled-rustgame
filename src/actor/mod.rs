@@ -1,4 +1,3 @@
-pub mod npc;
 pub mod player;
 pub mod target;
 
@@ -57,7 +56,6 @@ impl Default for Name {
 #[derive(Bundle, Default)]
 pub struct Actor {
     pub name: Name,
-    pub pbr: PbrBundle,
     pub combat_status: CombatStatus,
     pub target: Target,
     targetable: Targetable,

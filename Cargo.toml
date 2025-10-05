@@ -5,8 +5,8 @@ edition = "2021"
 
 
 [dependencies]
-bevy = "0.13"
-leafwing-input-manager = "0.13"
+bevy = "0.17"
+leafwing-input-manager = "0.18"
 
 
 [profile.dev.package."*"]

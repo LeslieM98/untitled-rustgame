@@ -28,30 +28,35 @@ pub enum ActionBarAction {
     Button2,
     Button3,
     Button4,
+    Button5,
+    Special1,
+    Special2,
+    Special3,
+    Special4,
 }
 
 fn init_movement_controls(mut commands: Commands) {
-    commands.spawn(InputManagerBundle::<MovementAction> {
-        action_state: ActionState::default(),
-        input_map: InputMap::new([
-            (MovementAction::Forward, KeyCode::KeyW),
-            (MovementAction::Backward, KeyCode::KeyS),
-            (MovementAction::Left, KeyCode::KeyA),
-            (MovementAction::Right, KeyCode::KeyD),
-            (MovementAction::Jump, KeyCode::Space),
-            (MovementAction::Crouch, KeyCode::ShiftLeft),
-        ])
-    });
+    // commands.spawn(InputManagerBundle::<MovementAction> {
+    //     action_state: ActionState::default(),
+    //     input_map: InputMap::new([
+    //         (MovementAction::Forward, KeyCode::KeyW),
+    //         (MovementAction::Backward, KeyCode::KeyS),
+    //         (MovementAction::Left, KeyCode::KeyA),
+    //         (MovementAction::Right, KeyCode::KeyD),
+    //         (MovementAction::Jump, KeyCode::Space),
+    //         (MovementAction::Crouch, KeyCode::ShiftLeft),
+    //     ])
+    // });
 }
 
 fn init_action_bar_controls(mut commands: Commands) {
-    commands.spawn(InputManagerBundle::<ActionBarAction> {
-        action_state: ActionState::default(),
-        input_map: InputMap::new([
-            (ActionBarAction::Button1, KeyCode::Digit1),
-            (ActionBarAction::Button2, KeyCode::Digit2),
-            (ActionBarAction::Button3, KeyCode::Digit3),
-            (ActionBarAction::Button4, KeyCode::Digit4),
-        ]),
-    });
+    // commands.spawn(InputManagerBundle::<ActionBarAction> {
+    //     action_state: ActionState::default(),
+    //     input_map: InputMap::new([
+    //         (ActionBarAction::Button1, KeyCode::Digit1),
+    //         (ActionBarAction::Button2, KeyCode::Digit2),
+    //         (ActionBarAction::Button3, KeyCode::Digit3),
+    //         (ActionBarAction::Button4, KeyCode::Digit4),
+    //     ]),
+    // });
 }

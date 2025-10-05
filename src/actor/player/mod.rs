@@ -1,6 +1,5 @@
 pub mod camera;
 pub mod movement;
-pub mod targeting;
 
 use crate::actor::player::camera::{camera_scroll, orbit_camera};
 use crate::actor::player::movement::move_player;
@@ -63,22 +62,19 @@ pub fn spawn_player(mut commands: Commands,
 
     let tex_handle = asset_server.load("PNG/Purple/texture_04.png");
 
-
     let material_handle = materials.add(StandardMaterial {
         base_color_texture: Some(tex_handle.clone()),
         unlit: false,
         ..default()
     });
 
-    let pbr = PbrBundle {
-        mesh: meshes.add(Mesh::from(Capsule3d::default())),
-        material: material_handle,
-        ..default()
-    };
+    let defaultMesh = Mesh3d(meshes.add(Capsule3d::default()));
+    let material = MeshMaterial3d(material_handle);
+
 
     let camera_entity = camera::spawn(&mut commands);
     commands
         .spawn(player_bundle)
-        .insert(pbr)
+        .insert((defaultMesh, material))
         .add_child(camera_entity);
 }
