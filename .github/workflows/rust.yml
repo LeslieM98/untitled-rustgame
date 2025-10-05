@@ -15,6 +15,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Install system dependencies for Wayland
+      run: |
+        sudo apt update
+        sudo apt install -y libwayland-dev libxkbcommon-dev pkg-config
     - uses: actions/checkout@v4
     - name: Build
       run: cargo build --verbose
