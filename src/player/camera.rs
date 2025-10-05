@@ -1,4 +1,5 @@
-use crate::actor::player::*;
+use bevy::input::mouse::{MouseMotion, MouseWheel};
+use crate::player::*;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 

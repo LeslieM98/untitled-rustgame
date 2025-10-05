@@ -1,7 +1,7 @@
-use crate::actor::player::PlayerMarker;
 use crate::settings::controls::MovementAction;
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::ActionState;
+use crate::player::PlayerMarker;
 
 pub fn move_player(
     mut query: Query<&mut Transform, With<PlayerMarker>>,

@@ -5,10 +5,10 @@ use bevy::math::{Quat, Vec3};
 use bevy::prelude::*;
 use std::f32::consts::PI;
 
-pub mod actor;
 pub mod debug;
 pub mod settings;
 pub mod game;
+mod player;
 
 pub fn load_debug_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
     let my_gltf = asset_server.load("glTF/Debug_Scene.gltf#Scene0");
