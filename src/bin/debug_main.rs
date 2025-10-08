@@ -1,13 +1,13 @@
 use bevy::prelude::*;
-use rust_game::debug::DebugPlugin;
+use untitled_rustgame::debug::DebugPlugin;
 use std::env;
-use rust_game::game::Game;
+use untitled_rustgame::game::Game;
 
 struct DebugScene;
 
 impl Plugin for DebugScene {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, rust_game::load_debug_scene);
+        app.add_systems(Startup, untitled_rustgame::load_debug_scene);
     }
 }
 
