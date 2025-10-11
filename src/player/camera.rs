@@ -8,6 +8,16 @@ pub struct PlayerCameraMarker;
 #[derive(Component)]
 pub struct CameraBaseNodeMarker;
 
+pub struct CameraPlugin;
+
+impl Plugin for CameraPlugin {
+    fn build(&self, app: &mut App) {
+        app
+            .add_systems(PostStartup, init_camera)
+            .add_systems(Update, (orbit_camera, camera_scroll).in_set(PlayerControlSet));
+    }
+}
+
 pub fn init_camera(mut commands: Commands,
                    player: Query<Entity, With<PlayerMarker>>){
 
@@ -85,14 +95,7 @@ pub fn camera_scroll(
         let delta: f32 = scroll_events.read().map(|event| event.y).sum();
         for mut camera_transform in &mut query {
             let mut new_value = camera_transform.translation.z + -delta;
-            new_value = if new_value < MIN_DISTANCE {
-                MIN_DISTANCE
-            } else if new_value > MAX_DISTANCE {
-                MAX_DISTANCE
-            } else {
-                new_value
-            };
-
+            new_value = new_value.clamp(MIN_DISTANCE, MAX_DISTANCE);
             camera_transform.translation.z = new_value;
         }
     }
