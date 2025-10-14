@@ -1,7 +1,17 @@
+use bevy::app::MainScheduleOrder;
 use crate::settings::controls::MovementAction;
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::ActionState;
-use crate::player::PlayerMarker;
+use crate::player::{init_mesh, spawn_player, PlayerControlSet, PlayerInit, PlayerMarker, PlayerPlugin, PlayerSpawn};
+use crate::player::camera::CameraPlugin;
+
+pub struct PlayerMovementPlugin;
+
+impl Plugin for PlayerMovementPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, move_player.in_set(PlayerControlSet));
+    }
+}
 
 pub fn move_player(
     mut query: Query<&mut Transform, With<PlayerMarker>>,

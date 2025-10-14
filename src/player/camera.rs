@@ -13,7 +13,7 @@ pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_systems(PostStartup, init_camera)
+            .add_systems(PlayerInit, init_camera)
             .add_systems(Update, (orbit_camera, camera_scroll).in_set(PlayerControlSet));
     }
 }

@@ -1,14 +1,14 @@
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
-use crate::player::PlayerMarker;
+use crate::player::{PlayerInit, PlayerMarker};
 
 pub struct SettingsControlsPlugin;
 
 impl Plugin for SettingsControlsPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_systems(PostStartup, init_movement_controls)
-            .add_systems(PostStartup, init_action_bar_controls)
+            .add_systems(PlayerInit, init_movement_controls)
+            .add_systems(PlayerInit, init_action_bar_controls)
             .add_plugins(InputManagerPlugin::<MovementAction>::default())
             .add_plugins(InputManagerPlugin::<ActionBarAction>::default());
     }
