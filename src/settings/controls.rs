@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use leafwing_input_manager::prelude::*;
-use crate::player::{PlayerInit, PlayerMarker};
+use crate::player::PlayerMarker;
+use crate::schedule::PlayerInit;
 
 pub struct SettingsControlsPlugin;
 

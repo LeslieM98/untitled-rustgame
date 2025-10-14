@@ -8,6 +8,7 @@ pub mod debug;
 pub mod settings;
 pub mod game;
 mod player;
+mod schedule;
 
 pub fn load_debug_scene(mut commands: Commands, asset_server: Res<AssetServer>) {
     let my_gltf = asset_server.load("glTF/Debug_Scene.gltf#Scene0");
