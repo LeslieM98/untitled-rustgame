@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use untitled_rustgame::debug::DebugPlugin;
 use std::env;
-use untitled_rustgame::game::Game;
+use untitled_rustgame::Game;
 
 struct DebugScene;
 
