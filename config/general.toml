@@ -1,0 +1,2 @@
+[general]
+extra_args = ["extra1, extra2"]
