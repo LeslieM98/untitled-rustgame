@@ -1,8 +1,4 @@
-#![allow(dead_code)]
-
-use bevy::asset::AssetServer;
 use bevy::prelude::*;
-use std::f32::consts::PI;
 use crate::config_management::ConfigPlugin;
 use crate::player::PlayerPlugin;
 use crate::schedule::CustomSchedulePlugin;
