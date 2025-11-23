@@ -5,55 +5,47 @@ use serde::Deserialize;
 
 
 pub struct ConfigPlugin{
-    loaded_config: Result<LoadedConf, std::io::Error>
+    config: LoadedConf
 }
 
 impl ConfigPlugin{
-    pub fn new(loaded_config: Result<LoadedConf, std::io::Error>)->Self{
-        Self{loaded_config}
+    pub fn new(loaded_config: LoadedConf)->Self{
+        Self{ config: loaded_config }
     }
 }
 
 impl Plugin for ConfigPlugin {
     fn build(&self, app: &mut App) {
-        let used_config = match self.loaded_config{
-            Ok(ref loaded_config)=> loaded_config.clone(),
-            Err(ref error )=>{
-                bevy::log::warn!("Failed to load config: {}", error);
-                LoadedConf::default()
-            }
-        };
-
-        bevy::log::debug!("Config loaded: \n{:?}", used_config);
+        bevy::log::debug!("Config loaded: \n{:?}", self.config);
 
         app.insert_resource(LoadedConf::default());
     }
 }
-#[derive(Resource, Default, Debug, Clone)]
+#[derive(Resource, Default, Debug)]
 pub struct LoadedConf{
-    configuration: Arc<Configuration>,
+    pub configuration: Configuration
 }
 
 impl LoadedConf{
     pub fn new(configuration: Configuration)->Self{
-        Self{configuration: Arc::new(configuration)}
+        Self{configuration }
     }
 }
 
 #[derive(Resource, Deserialize, Default, Debug)]
 pub struct Configuration{
-    general: General,
-    debug: Option<Debug>
+    pub general: General,
+    pub debug: Option<Debug>
 }
 
 #[derive(Deserialize, Default, Debug)]
 pub struct General {
-    extra_args: Vec<String>,
+    pub extra_args: Vec<String>,
 }
 
 #[derive(Deserialize, Default, Debug)]
 pub struct Debug {
-    enable_logging: bool
+    pub enable_debug_logging: bool
 }
 
 pub fn load_config(config_dir: &str) -> Result<LoadedConf, std::io::Error> {
