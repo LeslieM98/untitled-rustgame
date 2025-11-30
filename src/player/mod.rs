@@ -27,11 +27,14 @@ impl Plugin for PlayerPlugin {
 struct PlayerControlSet;
 
 #[derive(Component, Default, Debug)]
-pub struct PlayerMarker(u32);
+pub struct PlayerMarker{
+    id: u32
+}
 
 
 pub fn spawn_player(mut commands: Commands){
     let player_bundle = (PlayerMarker::default(), Transform::default());
+    info!("Player spawned, ID: {}", player_bundle.0.id);
     commands.spawn(player_bundle);
 }
 
