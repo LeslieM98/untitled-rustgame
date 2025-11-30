@@ -26,12 +26,13 @@ impl Plugin for PlayerPlugin {
 #[derive(SystemSet, Eq, Clone, Copy, PartialEq, Hash, Debug)]
 struct PlayerControlSet;
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Debug)]
 pub struct PlayerMarker(u32);
 
 
 pub fn spawn_player(mut commands: Commands){
-    commands.spawn((PlayerMarker::default(), Transform::default()));
+    let player_bundle = (PlayerMarker::default(), Transform::default());
+    commands.spawn(player_bundle);
 }
 
 pub fn init_mesh(mut commands: Commands,

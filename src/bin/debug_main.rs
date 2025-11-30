@@ -1,5 +1,4 @@
-use bevy::prelude::*;
-use untitled_rustgame::{load_config, run};
+use untitled_rustgame::run;
 
 
 fn main() {

@@ -24,12 +24,19 @@ pub fn load_bevy_logger(config: &LoadedConf, app: &mut App) {
         LogPlugin::default();
     };
     app.add_plugins(log_plugin);
-    app
-        .add_plugins(AssetPlugin::default())
-        .add_plugins(WindowPlugin::default());
 }
 
+pub fn load_custom_plugins(config: LoadedConf, app: &mut App) {
+    app
+        .add_plugins(PlayerPlugin)
+        .add_plugins(SettingsPlugin)
+        .add_plugins(CustomSchedulePlugin)
+        .add_plugins(ConfigPlugin::new(config))
+        .add_plugins(DebugPlugin);
+}
 pub fn load_bevy_plugins(config: &LoadedConf, app: &mut App) {
+
+    app.add_plugins(DefaultPlugins.build().disable::<LogPlugin>());
     load_bevy_logger(config, app);
 }
 
@@ -45,15 +52,9 @@ pub fn run() {
         }
     };
 
+    load_bevy_plugins(&config, &mut app);
+    load_custom_plugins(config, &mut app);
 
-
-    app
-        .add_plugins(MinimalPlugins)
-        .add_plugins(PlayerPlugin)
-        .add_plugins(SettingsPlugin)
-        .add_plugins(CustomSchedulePlugin)
-        .add_plugins(ConfigPlugin::new(config))
-        .add_plugins(DebugPlugin);
 
     if let Some(ref _err) = config_load_error {
         app.world_mut()

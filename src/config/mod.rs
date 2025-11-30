@@ -1,5 +1,4 @@
 use std::fs;
-use std::sync::Arc;
 use bevy::prelude::{Plugin, Resource, App};
 use serde::Deserialize;
 
