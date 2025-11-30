@@ -15,17 +15,6 @@ mod config;
 
 pub use crate::config::load_config;
 
-pub fn load_bevy_logger(config: &LoadedConf, app: &mut App) {
-    let log_plugin = if config.configuration.debug.is_some() {
-        if config.configuration.debug.as_ref().unwrap().enable_debug_logging {
-            LogPlugin{level: Level::DEBUG, ..default()};
-        }
-    } else {
-        LogPlugin::default();
-    };
-    app.add_plugins(log_plugin);
-}
-
 pub fn load_custom_plugins(config: LoadedConf, app: &mut App) {
     app
         .add_plugins(PlayerPlugin)
@@ -35,9 +24,11 @@ pub fn load_custom_plugins(config: LoadedConf, app: &mut App) {
         .add_plugins(DebugPlugin);
 }
 pub fn load_bevy_plugins(config: &LoadedConf, app: &mut App) {
-
-    app.add_plugins(DefaultPlugins.build().disable::<LogPlugin>());
-    load_bevy_logger(config, app);
+    let mut default_plugins_builder = DefaultPlugins.build();
+    if config.configuration.debug.is_some() && config.configuration.debug.as_ref().unwrap().enable_debug_logging {
+        default_plugins_builder = default_plugins_builder.set(LogPlugin{level: Level::DEBUG, ..default()});
+    }
+    app.add_plugins(default_plugins_builder);
 }
 
 pub fn run() {
@@ -59,9 +50,13 @@ pub fn run() {
     if let Some(ref _err) = config_load_error {
         app.world_mut()
             .run_system_once(|| {
-                warn!("Failed to load config");
+                warn!("Failed to load config, default config loaded!");
             })
             .expect("Error running this system.");
+    }
+
+    for p in app.get_added_plugins::<LogPlugin>(){
+        println!("{}", p.level);
     }
 
     app.run();
