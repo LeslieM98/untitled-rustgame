@@ -2,14 +2,20 @@ use std::f32::consts::PI;
 use bevy::app::{App, Plugin, Startup};
 use bevy::asset::AssetServer;
 use bevy::light::DirectionalLight;
-use bevy::prelude::{Commands, Res, SceneRoot, Transform};
+use bevy::prelude::{debug, Commands, Res, SceneRoot, Transform};
 
 pub struct DebugPlugin;
 
 impl Plugin for DebugPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, load_debug_scene);
+        app
+            // .add_systems(Startup, load_debug_scene)
+            .add_systems(Startup, debug_info);
     }
+}
+
+pub fn debug_info() {
+    debug!("Debug Plugin loaded!");
 }
 
 pub fn load_debug_scene(mut commands: Commands, asset_server: Res<AssetServer>) {

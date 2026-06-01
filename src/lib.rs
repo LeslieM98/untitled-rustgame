@@ -6,14 +6,17 @@ use crate::debug::DebugPlugin;
 use crate::player::PlayerPlugin;
 use crate::schedule::CustomSchedulePlugin;
 use crate::settings::SettingsPlugin;
+use crate::map::MapPlugin;
+
+pub use crate::config::load_config;
 
 pub mod debug;
 pub mod settings;
 mod player;
 mod schedule;
 mod config;
+mod map;
 
-pub use crate::config::load_config;
 
 pub fn load_custom_plugins(config: LoadedConf, app: &mut App) {
     app
@@ -21,6 +24,7 @@ pub fn load_custom_plugins(config: LoadedConf, app: &mut App) {
         .add_plugins(SettingsPlugin)
         .add_plugins(CustomSchedulePlugin)
         .add_plugins(ConfigPlugin::new(config))
+        .add_plugins(MapPlugin)
         .add_plugins(DebugPlugin);
 }
 pub fn load_bevy_plugins(config: &LoadedConf, app: &mut App) {
