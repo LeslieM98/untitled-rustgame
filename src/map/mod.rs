@@ -25,15 +25,15 @@ pub fn spawn_map(
     let seed = hasher.finish() as u32;
     let perlin = Perlin::new(seed);
     let perlin2 = Perlin::new(seed + 1337);
-    let size = 1000; // 10x10 squares
+    const CHUNK_SIZE: u32 = 100; // 10x10 squares
     let step = 1.0;
 
     let mut positions = Vec::new();
 
     // (size + 1) x (size + 1) vertices
-    for y in 0..=size {
+    for y in 0..=CHUNK_SIZE {
         let yf = y as f64 * step;
-        for x in 0..=size {
+        for x in 0..=CHUNK_SIZE {
             let xf = x as f64 * step;
             let perlin_result = perlin.get([xf * 0.01, yf * 0.01]) * 100.0;
             let perlin_result2 = perlin2.get([xf * 0.1, yf * 0.1]) * 10.0;
@@ -45,29 +45,8 @@ pub fn spawn_map(
         }
     }
 
-    let mut indices: Vec<u32> = Vec::new();
-
-    // 2 triangles per square
-    for y in 0..size {
-        for x in 0..size {
-            let i = y * (size + 1) + x;
-
-            let a = i;
-            let b = i + 1;
-            let c = i + (size + 1);
-            let d = i + (size + 1) + 1;
-
-            // triangle 1
-            indices.push(a);
-            indices.push(c);
-            indices.push(b);
-
-            // triangle 2
-            indices.push(b);
-            indices.push(c);
-            indices.push(d);
-        }
-    }
+    let indices: Vec<u32> = Vec::from(calculate_indices::<{CHUNK_SIZE as usize},
+        { (CHUNK_SIZE * CHUNK_SIZE * 6) as usize }>());
 
     let normals = calculate_normals(&positions, &indices);
 
@@ -87,6 +66,39 @@ pub fn spawn_map(
         Mesh3d(meshes.add(mesh)),
         MeshMaterial3d(materials.add(Color::srgb(0.1, 0.1, 0.1))),
     ));
+}
+
+const fn calculate_indices<const CHUNK_SIZE: usize, const INDEX_COUNT: usize>()
+    -> [u32; INDEX_COUNT]
+{
+    let mut indices = [0u32; INDEX_COUNT];
+    let mut idx = 0;
+
+    let mut y = 0;
+    while y < CHUNK_SIZE {
+        let mut x = 0;
+        while x < CHUNK_SIZE {
+            let i = (y * (CHUNK_SIZE + 1) + x) as u32;
+
+            let a = i;
+            let b = i + 1;
+            let c = i + (CHUNK_SIZE + 1) as u32;
+            let d = c + 1;
+
+            indices[idx] = a; idx += 1;
+            indices[idx] = c; idx += 1;
+            indices[idx] = b; idx += 1;
+
+            indices[idx] = b; idx += 1;
+            indices[idx] = c; idx += 1;
+            indices[idx] = d; idx += 1;
+
+            x += 1;
+        }
+        y += 1;
+    }
+
+    indices
 }
 
 
