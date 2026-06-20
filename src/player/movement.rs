@@ -38,8 +38,17 @@ pub fn move_player(
         }
 
         if direction != Vec3::ZERO {
+            const DEFAULT_SPEED: f32 = 6.0;
+            const SPRINT_MULTIPLIER: f32 = 10.0;
+            let speed = if key.pressed(KeyCode::ShiftLeft) {
+                DEFAULT_SPEED * SPRINT_MULTIPLIER
+            } else {
+                DEFAULT_SPEED
+            };
+
             direction = direction.normalize();
-            transform.translation += direction * 6.0 * time.delta_secs();
+            transform.translation += direction * speed * time.delta_secs();
+
         }
     }
 
