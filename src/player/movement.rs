@@ -1,6 +1,4 @@
-use crate::settings::controls::MovementAction;
 use bevy::prelude::*;
-use leafwing_input_manager::prelude::ActionState;
 use crate::player::{PlayerControlSet, PlayerMarker};
 
 pub struct PlayerMovementPlugin;
@@ -13,36 +11,36 @@ impl Plugin for PlayerMovementPlugin {
 
 pub fn move_player(
     mut query: Query<&mut Transform, With<PlayerMarker>>,
-    inputs: Query<&ActionState<MovementAction>>,
+    // inputs: Query<&ActionState<MovementAction>>,
+    key: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
 ) {
-    for input in inputs.iter() {
-        for mut transform in query.iter_mut() {
-            let mut direction = Vec3::ZERO;
+    for mut transform in query.iter_mut() {
+        let mut direction = Vec3::ZERO;
 
-            if input.pressed(&MovementAction::Forward) {
-                direction += *transform.forward();
-            }
-            if input.pressed(&MovementAction::Backward) {
-                direction += *transform.back();
-            }
-            if input.pressed(&MovementAction::Left) {
-                direction += *transform.left();
-            }
-            if input.pressed(&MovementAction::Right) {
-                direction += *transform.right();
-            }
-            if input.pressed(&MovementAction::Jump) {
-                direction += *transform.up();
-            }
-            if input.pressed(&MovementAction::Crouch) {
-                direction += *transform.down();
-            }
+        if key.pressed(KeyCode::KeyW) {
+            direction += *transform.forward();
+        }
+        if key.pressed(KeyCode::KeyS) {
+            direction += *transform.back();
+        }
+        if key.pressed(KeyCode::KeyA) {
+            direction += *transform.left();
+        }
+        if key.pressed(KeyCode::KeyD) {
+            direction += *transform.right();
+        }
+        if key.pressed(KeyCode::Space) {
+            direction += *transform.up();
+        }
+        if key.pressed(KeyCode::ControlLeft) {
+            direction += *transform.down();
+        }
 
-            if direction != Vec3::ZERO {
-                direction = direction.normalize();
-                transform.translation += direction * 6.0 * time.delta_secs();
-            }
+        if direction != Vec3::ZERO {
+            direction = direction.normalize();
+            transform.translation += direction * 6.0 * time.delta_secs();
         }
     }
+
 }

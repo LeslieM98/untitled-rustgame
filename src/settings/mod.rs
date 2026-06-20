@@ -1,13 +1,11 @@
-pub mod controls;
 
-use crate::settings::controls::SettingsControlsPlugin;
 use bevy::app::App;
 use bevy::prelude::Plugin;
 
 pub struct SettingsPlugin;
 
 impl Plugin for SettingsPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(SettingsControlsPlugin);
+    fn build(&self, _app: &mut App) {
+
     }
 }
