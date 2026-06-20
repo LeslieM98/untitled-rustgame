@@ -1,6 +1,7 @@
 use std::hash::{Hash, Hasher};
 use bevy::mesh::{Indices, PrimitiveTopology};
 use bevy::prelude::*;
+use bevy::settings::*;
 use noise::{NoiseFn, Perlin};
 
 pub struct MapPlugin;
@@ -15,16 +16,22 @@ impl Plugin for MapPlugin {
     }
 }
 
+#[derive(Resource, SettingsGroup, Reflect, Default)]
+#[reflect(Resource, SettingsGroup, Default)]
+pub struct MapSettings {
+    seed: u32,
+}
+
+
 pub fn spawn_map(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    settings: Res<MapSettings>,
 ) {
-    let mut hasher = std::hash::DefaultHasher::default();
-    std::time::SystemTime::now().hash(&mut hasher);
-    let seed = hasher.finish() as u32;
+    let seed = settings.seed;
     let perlin = Perlin::new(seed);
-    let perlin2 = Perlin::new(seed + 1337);
+    let perlin2 = Perlin::new(seed * 2);
     const CHUNK_SIZE: u32 = 100; // 10x10 squares
     let step = 1.0;
 
