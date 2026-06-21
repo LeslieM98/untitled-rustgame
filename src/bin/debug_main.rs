@@ -1,7 +1,7 @@
-use untitled_rustgame::run;
+use untitled_rustgame::build_game;
 
 
 fn main() {
-    run();
+    build_game().run();
 }
 

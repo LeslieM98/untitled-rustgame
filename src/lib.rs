@@ -21,7 +21,7 @@ pub fn load_custom_plugins(app: &mut App) {
         .add_plugins(DebugPlugin);
 }
 
-pub fn run() {
+pub fn build_game() -> App{
     let mut app = App::new();
     // ~/.config/sotian.rustgame/settings.toml
     let setting_plugin = SettingsPlugin::new("sotian.rustgame");
@@ -43,7 +43,7 @@ pub fn run() {
         println!("Debug level: {}", p.level);
     }
 
-    app.run();
+    app
 }
 
 fn on_window_close(mut close: MessageReader<WindowCloseRequested>, mut commands: Commands) {
