@@ -17,11 +17,11 @@ fn main() {
         .collect();
 
     for schedule_label in schedule_labels.iter() {
-        let file_path = format!("{DIRECTORY}/{:?}_schedule.png", schedule_label);
+        let file_path = format!("{DIRECTORY}/{:?}_schedule", schedule_label);
         let graph:String = bevy_mod_debugdump::schedule_graph_dot(&mut app, *schedule_label, &schedule_graph::Settings::default());
         let mut command = Command::new("dot")
-            .arg("-Tpng")
-            .arg(format!("-o{file_path}"))
+            .arg("-Tsvg")
+            .arg(format!("-o{file_path}.svg"))
             .stdin(Stdio::piped())
             .spawn()
             .expect("failed to execute process");
