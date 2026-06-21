@@ -5,17 +5,21 @@ use crate::player::movement::{move_player, PlayerMovementPlugin};
 use bevy::prelude::*;
 use bevy::math::*;
 use crate::player::camera::CameraPlugin;
-pub(crate) use crate::schedule::{PlayerInit, PlayerSpawn};
 
 pub struct PlayerPlugin;
+
+#[derive(SystemSet, Eq, Clone, Copy, PartialEq, Hash, Debug)]
+pub struct PlayerSpawnSet;
+
+#[derive(SystemSet, Eq, Clone, Copy, PartialEq, Hash, Debug)]
+pub struct PlayerInitSet;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
 
-
         app
-            .add_systems(PlayerSpawn, spawn_player)
-            .add_systems(PlayerInit, init_mesh)
+            .add_systems(PostStartup, spawn_player.in_set(PlayerSpawnSet))
+            .add_systems(PostStartup, init_mesh.in_set(PlayerInitSet))
             .add_systems(Update, move_player.in_set(PlayerControlSet));
 
         app.add_plugins(CameraPlugin)

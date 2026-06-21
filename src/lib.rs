@@ -47,7 +47,6 @@ pub fn build_game() -> App{
 }
 
 fn on_window_close(mut close: MessageReader<WindowCloseRequested>, mut commands: Commands) {
-    // Save settings immediately, then quit.
     if let Some(_close_event) = close.read().next() {
         commands.queue(SaveSettingsSync::Always);
         commands.write_message(AppExit::Success);
