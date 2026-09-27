@@ -1,12 +1,12 @@
 use crate::player::PlayerMarker;
 use bevy::mesh::{Indices, PrimitiveTopology};
-use bevy::pbr::wireframe::Wireframe;
 use bevy::prelude::*;
 use bevy::settings::*;
 use noise::{NoiseFn, Perlin};
 use std::collections::HashMap;
 
 const CHUNK_SIZE: u32 = 128;
+const DRAWN_AREA: i32 = 2;
 
 pub struct MapPlugin;
 impl Plugin for MapPlugin {
@@ -88,22 +88,32 @@ fn draw_area(
 ) {
     let player_pos = player_pos_queue.single().unwrap();
     let player_chunk_x = player_pos.translation.x.floor() as i32;
-    let player_chunk_y = player_pos.translation.y.floor() as i32;
+    let player_chunk_z = player_pos.translation.z.floor() as i32;
 
-    if let Some(chunk) = map
-        .get_chunk(player_chunk_x, player_chunk_y)
-        .and_then(|chunk| Some(chunk.to_mesh()))
-    {
-        commands.spawn((
-            Mesh3d(meshes.add(chunk)),
-            MeshMaterial3d(materials.add(Color::srgb(0.1, 0.1, 0.1))),
-            ChunkMarker {},
-            // Wireframe,
-        ));
+    for chunk_x in player_chunk_x - DRAWN_AREA..player_chunk_x + DRAWN_AREA {
+        for chunk_z in player_chunk_z - DRAWN_AREA..player_chunk_z + DRAWN_AREA {
+            if let Some(chunk) = map
+                .get_chunk(chunk_x, chunk_z)
+                .and_then(|chunk| Some(chunk.to_mesh()))
+            {
+                commands.spawn((
+                    Mesh3d(meshes.add(chunk)),
+                    MeshMaterial3d(materials.add(Color::srgb(0.1, 0.1, 0.1))),
+                    ChunkMarker {},
+                    Transform::from_xyz(
+                        player_chunk_x as f32 * CHUNK_SIZE as f32,
+                        0.0,
+                        player_chunk_z as f32 * CHUNK_SIZE as f32,
+                    ),
+                    // Wireframe,
+                ));
+            }
+        }
     }
 }
 
 fn undraw_area(mut commands: Commands, chunks: Query<Entity, With<ChunkMarker>>) {
+    info!("{}", chunks.iter().count());
     for entity in chunks.iter() {
         commands.entity(entity).despawn();
     }
@@ -116,31 +126,36 @@ fn generate_chunks(
 ) {
     let player_pos = player_pos_queue.single().unwrap();
     let player_chunk_x = player_pos.translation.x.floor() as i32;
-    let player_chunk_y = player_pos.translation.y.floor() as i32;
+    let player_chunk_z = player_pos.translation.z.floor() as i32;
 
-    if !map.chunk_is_present(player_chunk_x, player_chunk_y) {
-        let seed = settings.seed;
-        let perlin = Perlin::new(seed);
-        let step = 1.0;
+    for chunk_x in player_chunk_x - DRAWN_AREA..player_chunk_x + DRAWN_AREA {
+        for chunk_z in player_chunk_z - DRAWN_AREA..player_chunk_z + DRAWN_AREA {
+            if !map.chunk_is_present(chunk_x, chunk_z) {
+                let seed = settings.seed;
+                let perlin = Perlin::new(seed);
+                let step = 1.0;
 
-        let mut positions = Vec::new();
+                let mut positions = Vec::new();
 
-        for y in 0..=CHUNK_SIZE - 1 {
-            let yf = y as f64 * step;
-            for x in 0..=CHUNK_SIZE - 1 {
-                let xf = x as f64 * step;
-                let perlin_result = perlin.get([xf * 0.01, yf * 0.01]) * 100.0;
-                positions.push([xf as f32, perlin_result as f32, yf as f32]);
+                for y in 0..=CHUNK_SIZE - 1 {
+                    let yf = y as f64 * step;
+                    for x in 0..=CHUNK_SIZE - 1 {
+                        let xf = x as f64 * step;
+                        let perlin_result = perlin.get([xf * 0.01, yf * 0.01]) * 100.0;
+                        positions.push([xf as f32, perlin_result as f32, yf as f32]);
+                    }
+                }
+
+                map.insert_chunk(
+                    player_chunk_x,
+                    player_chunk_z,
+                    Chunk::new(positions.try_into().unwrap()),
+                );
             }
         }
-
-        map.insert_chunk(
-            player_chunk_x,
-            player_chunk_y,
-            Chunk::new(positions.try_into().unwrap()),
-        );
     }
 }
+
 fn calculate_indices(chunk_size: u32) -> Vec<u32> {
     let mut indices = Vec::new();
 
