@@ -68,11 +68,11 @@ impl Chunk {
 
     pub fn to_mesh(&self) -> Mesh {
         let indices: Vec<u32> = calculate_indices(CHUNK_SIZE);
-        // let normals = calculate_normals(&self.terrain, &indices);
+        let normals = calculate_normals(&self.terrain, &indices);
         let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, Default::default());
 
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.terrain.to_vec());
-        // mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
         mesh.insert_indices(Indices::U32(indices));
 
         mesh
@@ -98,7 +98,7 @@ fn draw_area(
             Mesh3d(meshes.add(chunk)),
             MeshMaterial3d(materials.add(Color::srgb(0.1, 0.1, 0.1))),
             ChunkMarker {},
-            Wireframe,
+            // Wireframe,
         ));
     }
 }
@@ -159,36 +159,48 @@ fn calculate_indices(chunk_size: u32) -> Vec<u32> {
     indices
 }
 
-// pub fn calculate_normals(vertices: &ChunkData, indices: &[u32]) -> Vec<[f32; 3]> {
-//     // 3 floats per vertex: x, y, z
-//     let vertex_count = vertices.len() / 3;
-//     let mut normals = vec![[0.0; 3]; vertex_count];
-//
-//     for triangle in indices.chunks_exact(3) {
-//         let ia = triangle[0] as usize;
-//         let ib = triangle[1] as usize;
-//         let ic = triangle[2] as usize;
-//
-//         let a = Vec3::from_array([vertices[ia * 3], vertices[ia * 3 + 1], vertices[ia * 3 + 2]]);
-//         let b = Vec3::from_array([vertices[ib * 3], vertices[ib * 3 + 1], vertices[ib * 3 + 2]]);
-//         let c = Vec3::from_array([vertices[ic * 3], vertices[ic * 3 + 1], vertices[ic * 3 + 2]]);
-//
-//         let face_normal = (b - a).cross(c - a);
-//
-//         for i in [ia, ib, ic] {
-//             normals[i][0] += face_normal.x;
-//             normals[i][1] += face_normal.y;
-//             normals[i][2] += face_normal.z;
-//         }
-//     }
-//
-//     for normal in &mut normals {
-//         let n = Vec3::from_array(*normal);
-//
-//         if n.length_squared() > 0.0 {
-//             *normal = n.normalize().to_array();
-//         }
-//     }
-//
-//     normals
-// }
+pub fn calculate_normals(vertices: &ChunkData, indices: &[u32]) -> Vec<[f32; 3]> {
+    let mut normals = vec![[0.0; 3]; vertices.len()];
+
+    for triangle in indices.chunks_exact(3) {
+        let i0 = triangle[0] as usize;
+        let i1 = triangle[1] as usize;
+        let i2 = triangle[2] as usize;
+
+        let v0 = vertices[i0];
+        let v1 = vertices[i1];
+        let v2 = vertices[i2];
+
+        // Two edges of the triangle
+        let edge1 = [v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]];
+
+        let edge2 = [v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]];
+
+        // Cross product
+        let normal = [
+            edge1[1] * edge2[2] - edge1[2] * edge2[1],
+            edge1[2] * edge2[0] - edge1[0] * edge2[2],
+            edge1[0] * edge2[1] - edge1[1] * edge2[0],
+        ];
+
+        // Add the face normal to each vertex
+        for &index in &[i0, i1, i2] {
+            normals[index][0] += normal[0];
+            normals[index][1] += normal[1];
+            normals[index][2] += normal[2];
+        }
+    }
+
+    // Normalize the accumulated normals
+    for normal in &mut normals {
+        let length = (normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]).sqrt();
+
+        if length > 0.0 {
+            normal[0] /= length;
+            normal[1] /= length;
+            normal[2] /= length;
+        }
+    }
+
+    normals
+}
