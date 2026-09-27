@@ -1,17 +1,25 @@
+use crate::player::PlayerMarker;
 use bevy::mesh::{Indices, PrimitiveTopology};
+use bevy::pbr::wireframe::Wireframe;
 use bevy::prelude::*;
 use bevy::settings::*;
 use noise::{NoiseFn, Perlin};
+use std::collections::HashMap;
+
+const CHUNK_SIZE: u32 = 128;
 
 pub struct MapPlugin;
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_map)
+        app.add_systems(Update, draw_area)
+            .add_systems(PreUpdate, generate_chunks)
+            .add_systems(PreUpdate, undraw_area)
             .insert_resource(GlobalAmbientLight {
                 color: Color::WHITE,
                 brightness: 1000.0,
                 affects_lightmapped_meshes: false,
-            });
+            })
+            .insert_resource(Map::default());
     }
 }
 
@@ -22,115 +30,165 @@ pub struct MapSettings {
     chunk_size: u32,
 }
 
-pub fn spawn_map(
+type ChunkIndex = i32;
+type ChunkData = [[f32; 3]; (CHUNK_SIZE * CHUNK_SIZE) as usize];
+#[derive(Default, Resource)]
+struct Map {
+    chunks: HashMap<ChunkIndex, HashMap<ChunkIndex, Chunk>>,
+}
+
+impl Map {
+    fn get_chunk(&self, x: ChunkIndex, y: ChunkIndex) -> Option<&Chunk> {
+        self.chunks.get(&x).and_then(|map| map.get(&y))
+    }
+
+    fn insert_chunk(&mut self, x: ChunkIndex, y: ChunkIndex, chunk: Chunk) {
+        if !self.chunks.contains_key(&x) {
+            self.chunks.insert(x, HashMap::new());
+        }
+
+        self.chunks.get_mut(&x).unwrap().insert(y, chunk);
+    }
+
+    fn chunk_is_present(&self, x: ChunkIndex, y: ChunkIndex) -> bool {
+        self.get_chunk(x, y).is_some()
+    }
+}
+
+#[derive(Component, Default, Debug)]
+struct ChunkMarker {}
+struct Chunk {
+    terrain: ChunkData,
+}
+
+impl Chunk {
+    pub fn new(terrain: ChunkData) -> Self {
+        Self { terrain }
+    }
+
+    pub fn to_mesh(&self) -> Mesh {
+        let indices: Vec<u32> = calculate_indices(CHUNK_SIZE);
+        // let normals = calculate_normals(&self.terrain, &indices);
+        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, Default::default());
+
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.terrain.to_vec());
+        // mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+        mesh.insert_indices(Indices::U32(indices));
+
+        mesh
+    }
+}
+
+fn draw_area(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    settings: Res<MapSettings>,
+    map: Res<Map>,
+    player_pos_queue: Query<&Transform, With<PlayerMarker>>,
 ) {
-    let seed = settings.seed;
-    let perlin = Perlin::new(seed);
-    let perlin2 = Perlin::new(seed * 2);
-    let chunk_size = settings.chunk_size;
-    let step = 1.0;
+    let player_pos = player_pos_queue.single().unwrap();
+    let player_chunk_x = player_pos.translation.x.floor() as i32;
+    let player_chunk_y = player_pos.translation.y.floor() as i32;
 
-    let mut positions = Vec::new();
-
-    for y in 0..=chunk_size {
-        let yf = y as f64 * step;
-        for x in 0..=chunk_size {
-            let xf = x as f64 * step;
-            let perlin_result = perlin.get([xf * 0.01, yf * 0.01]) * 100.0;
-            let perlin_result2 = perlin2.get([xf * 0.1, yf * 0.1]) * 10.0;
-            positions.push([
-                xf as f32,
-                (perlin_result + perlin_result2) as f32,
-                yf as f32,
-            ]);
-        }
-    }
-
-    let indices: Vec<u32> = calculate_indices(chunk_size);
-
-    let normals = calculate_normals(&positions, &indices);
-
-    let mut mesh = Mesh::new(
-        PrimitiveTopology::TriangleList,
-        Default::default(),
-    );
-
-    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
-    mesh.insert_attribute(
-        Mesh::ATTRIBUTE_NORMAL,
-        normals,
-    );
-    mesh.insert_indices(Indices::U32(indices));
-
-    commands.spawn((
-        Mesh3d(meshes.add(mesh)),
-        MeshMaterial3d(materials.add(Color::srgb(0.1, 0.1, 0.1))),
-    ));
-}
-    fn calculate_indices(chunk_size: u32) -> Vec<u32>
+    if let Some(chunk) = map
+        .get_chunk(player_chunk_x, player_chunk_y)
+        .and_then(|chunk| Some(chunk.to_mesh()))
     {
-        let mut indices: Vec<u32> = Vec::new();
+        commands.spawn((
+            Mesh3d(meshes.add(chunk)),
+            MeshMaterial3d(materials.add(Color::srgb(0.1, 0.1, 0.1))),
+            ChunkMarker {},
+            Wireframe,
+        ));
+    }
+}
 
-        // 2 triangles per square
-        for y in 0..chunk_size {
-            for x in 0..chunk_size {
-                let i = y * (chunk_size + 1) + x;
+fn undraw_area(mut commands: Commands, chunks: Query<Entity, With<ChunkMarker>>) {
+    for entity in chunks.iter() {
+        commands.entity(entity).despawn();
+    }
+}
 
-                let a = i;
-                let b = i + 1;
-                let c = i + (chunk_size + 1);
-                let d = i + (chunk_size + 1) + 1;
+fn generate_chunks(
+    settings: Res<MapSettings>,
+    mut map: ResMut<Map>,
+    player_pos_queue: Query<&Transform, With<PlayerMarker>>,
+) {
+    let player_pos = player_pos_queue.single().unwrap();
+    let player_chunk_x = player_pos.translation.x.floor() as i32;
+    let player_chunk_y = player_pos.translation.y.floor() as i32;
 
-                // triangle 1
-                indices.push(a);
-                indices.push(c);
-                indices.push(b);
+    if !map.chunk_is_present(player_chunk_x, player_chunk_y) {
+        let seed = settings.seed;
+        let perlin = Perlin::new(seed);
+        let step = 1.0;
 
-                // triangle 2
-                indices.push(b);
-                indices.push(c);
-                indices.push(d);
+        let mut positions = Vec::new();
+
+        for y in 0..=CHUNK_SIZE - 1 {
+            let yf = y as f64 * step;
+            for x in 0..=CHUNK_SIZE - 1 {
+                let xf = x as f64 * step;
+                let perlin_result = perlin.get([xf * 0.01, yf * 0.01]) * 100.0;
+                positions.push([xf as f32, perlin_result as f32, yf as f32]);
             }
         }
 
-        indices
+        map.insert_chunk(
+            player_chunk_x,
+            player_chunk_y,
+            Chunk::new(positions.try_into().unwrap()),
+        );
+    }
+}
+fn calculate_indices(chunk_size: u32) -> Vec<u32> {
+    let mut indices = Vec::new();
+
+    for y in 0..chunk_size - 1 {
+        for x in 0..chunk_size - 1 {
+            let top_left = (y * chunk_size + x) as u32;
+            let top_right = top_left + 1;
+            let bottom_left = ((y + 1) * chunk_size + x) as u32;
+            let bottom_right = bottom_left + 1;
+
+            indices.extend_from_slice(&[top_left, bottom_left, top_right]);
+            indices.extend_from_slice(&[top_right, bottom_left, bottom_right]);
+        }
     }
 
-    pub fn calculate_normals(
-        vertices: &[[f32; 3]],
-        indices: &[u32],
-    ) -> Vec<[f32; 3]> {
-        let mut normals = vec![[0.0; 3]; vertices.len()];
+    indices
+}
 
-        for triangle in indices.chunks_exact(3) {
-            let ia = triangle[0] as usize;
-            let ib = triangle[1] as usize;
-            let ic = triangle[2] as usize;
-
-            let a = Vec3::from_array(vertices[ia]);
-            let b = Vec3::from_array(vertices[ib]);
-            let c = Vec3::from_array(vertices[ic]);
-
-            let face_normal = (b - a).cross(c - a);
-
-            for i in [ia, ib, ic] {
-                normals[i][0] += face_normal.x;
-                normals[i][1] += face_normal.y;
-                normals[i][2] += face_normal.z;
-            }
-        }
-
-        for normal in &mut normals {
-            let n = Vec3::from_array(*normal);
-
-            if n.length_squared() > 0.0 {
-                *normal = n.normalize().to_array();
-            }
-        }
-
-        normals
-    }
+// pub fn calculate_normals(vertices: &ChunkData, indices: &[u32]) -> Vec<[f32; 3]> {
+//     // 3 floats per vertex: x, y, z
+//     let vertex_count = vertices.len() / 3;
+//     let mut normals = vec![[0.0; 3]; vertex_count];
+//
+//     for triangle in indices.chunks_exact(3) {
+//         let ia = triangle[0] as usize;
+//         let ib = triangle[1] as usize;
+//         let ic = triangle[2] as usize;
+//
+//         let a = Vec3::from_array([vertices[ia * 3], vertices[ia * 3 + 1], vertices[ia * 3 + 2]]);
+//         let b = Vec3::from_array([vertices[ib * 3], vertices[ib * 3 + 1], vertices[ib * 3 + 2]]);
+//         let c = Vec3::from_array([vertices[ic * 3], vertices[ic * 3 + 1], vertices[ic * 3 + 2]]);
+//
+//         let face_normal = (b - a).cross(c - a);
+//
+//         for i in [ia, ib, ic] {
+//             normals[i][0] += face_normal.x;
+//             normals[i][1] += face_normal.y;
+//             normals[i][2] += face_normal.z;
+//         }
+//     }
+//
+//     for normal in &mut normals {
+//         let n = Vec3::from_array(*normal);
+//
+//         if n.length_squared() > 0.0 {
+//             *normal = n.normalize().to_array();
+//         }
+//     }
+//
+//     normals
+// }
