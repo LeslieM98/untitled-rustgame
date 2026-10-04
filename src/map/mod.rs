@@ -30,6 +30,19 @@ pub struct MapSettings {
     chunk_size: u32,
 }
 
+fn get_surrounding_chunks(transform: &Transform) -> Vec<ChunkMarker> {
+    let (chunk_pos_x, _, chunk_pos_z) = get_chunk_pos(transform);
+    let mut surrounding_chunks = Vec::new();
+
+    for chunk_x in chunk_pos_x - DRAWN_AREA..chunk_pos_x + DRAWN_AREA {
+        for chunk_z in chunk_pos_z - DRAWN_AREA..chunk_pos_z + DRAWN_AREA {
+            surrounding_chunks.push(ChunkMarker::new(chunk_x, chunk_z));
+        }
+    }
+
+    surrounding_chunks
+}
+
 type ChunkIndex = i32;
 type ChunkData = [[f32; 3]; (CHUNK_SIZE * CHUNK_SIZE) as usize];
 #[derive(Default, Resource)]
@@ -62,8 +75,17 @@ impl Map {
     }
 }
 
-#[derive(Component, Default, Debug)]
-struct ChunkMarker {}
+#[derive(Component, Default, Debug, PartialEq)]
+struct ChunkMarker {
+    x: ChunkIndex,
+    z: ChunkIndex,
+}
+
+impl ChunkMarker {
+    fn new(x: ChunkIndex, z: ChunkIndex) -> ChunkMarker {
+        ChunkMarker { x, z }
+    }
+}
 struct Chunk {
     terrain: ChunkData,
 }
@@ -112,7 +134,7 @@ fn draw_area(
                 commands.spawn((
                     Mesh3d(meshes.add(chunk)),
                     MeshMaterial3d(materials.add(Color::srgb(0.1, 0.1, 0.1))),
-                    ChunkMarker {},
+                    ChunkMarker::new(chunk_x, chunk_z),
                     Transform::from_xyz(
                         (chunk_x * CHUNK_SIZE as i32) as f32,
                         0.0,
@@ -125,9 +147,17 @@ fn draw_area(
     }
 }
 
-fn undraw_area(mut commands: Commands, chunks: Query<Entity, With<ChunkMarker>>) {
-    for entity in chunks.iter() {
-        commands.entity(entity).despawn();
+fn undraw_area(
+    mut commands: Commands,
+    chunks: Query<(Entity, &ChunkMarker), With<ChunkMarker>>,
+    player_pos_queue: Query<&Transform, With<PlayerMarker>>,
+) {
+    let surrounding_chunks = get_surrounding_chunks(player_pos_queue.iter().last().unwrap());
+
+    for (entity, chunk_marker) in chunks.iter() {
+        if surrounding_chunks.contains(chunk_marker) {
+            commands.entity(entity).despawn();
+        }
     }
 }
 
