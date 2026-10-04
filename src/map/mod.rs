@@ -64,7 +64,7 @@ impl Map {
 }
 
 type ChunkIndexType = i32;
-#[derive(Component, Default, Debug, PartialEq, Eq, Hash)]
+#[derive(Component, Default, Debug, PartialEq, Eq, Hash, Copy, Clone)]
 struct ChunkIndex {
     x: ChunkIndexType,
     z: ChunkIndexType,
@@ -109,27 +109,32 @@ fn draw_area(
     mut materials: ResMut<Assets<StandardMaterial>>,
     map: Res<Map>,
     player_pos_queue: Query<&Transform, With<PlayerMarker>>,
+    drawn_chunks: Query<&ChunkIndex>,
 ) {
     let player_pos = player_pos_queue.single().unwrap();
     let player_chunk = get_chunk_pos(player_pos);
 
     for chunk_x in player_chunk.x - DRAWN_AREA..player_chunk.x + DRAWN_AREA {
         for chunk_z in player_chunk.z - DRAWN_AREA..player_chunk.z + DRAWN_AREA {
-            if let Some(chunk) = map
-                .get_chunk(&ChunkIndex::new(chunk_x, chunk_z))
-                .and_then(|chunk| Some(chunk.to_mesh()))
-            {
-                commands.spawn((
-                    Mesh3d(meshes.add(chunk)),
-                    MeshMaterial3d(materials.add(Color::srgb(0.1, 0.1, 0.1))),
-                    ChunkIndex::new(chunk_x, chunk_z),
-                    Transform::from_xyz(
-                        (chunk_x * CHUNK_SIZE as i32) as f32,
-                        0.0,
-                        (chunk_z * CHUNK_SIZE as i32) as f32,
-                    ),
-                    // Wireframe,
-                ));
+            let curr_chunk = ChunkIndex::new(chunk_x, chunk_z);
+            if !drawn_chunks.iter().any(|x| x.eq(&curr_chunk)) {
+                // info!("Drawing chunk");
+                if let Some(chunk) = map
+                    .get_chunk(&curr_chunk)
+                    .and_then(|chunk| Some(chunk.to_mesh()))
+                {
+                    commands.spawn((
+                        curr_chunk,
+                        Mesh3d(meshes.add(chunk)),
+                        MeshMaterial3d(materials.add(Color::srgb(0.1, 0.1, 0.1))),
+                        Transform::from_xyz(
+                            (curr_chunk.x * CHUNK_SIZE as i32) as f32,
+                            0.0,
+                            (curr_chunk.z * CHUNK_SIZE as i32) as f32,
+                        ),
+                        // Wireframe,
+                    ));
+                }
             }
         }
     }
@@ -142,8 +147,8 @@ fn undraw_area(
 ) {
     let surrounding_chunks = get_surrounding_chunks(player_pos_queue.iter().last().unwrap());
 
-    for (entity, chunk_marker) in chunks.iter() {
-        if surrounding_chunks.contains(chunk_marker) {
+    for (entity, chunk_index) in chunks.iter() {
+        if !surrounding_chunks.contains(chunk_index) {
             commands.entity(entity).despawn();
         }
     }
