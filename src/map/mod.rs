@@ -30,71 +30,59 @@ pub struct MapSettings {
     chunk_size: u32,
 }
 
-fn get_surrounding_chunks(transform: &Transform) -> Vec<ChunkMarker> {
-    let (chunk_pos_x, _, chunk_pos_z) = get_chunk_pos(transform);
+fn get_surrounding_chunks(transform: &Transform) -> Vec<ChunkIndex> {
+    let chunk_pos = get_chunk_pos(transform);
     let mut surrounding_chunks = Vec::new();
 
-    for chunk_x in chunk_pos_x - DRAWN_AREA..chunk_pos_x + DRAWN_AREA {
-        for chunk_z in chunk_pos_z - DRAWN_AREA..chunk_pos_z + DRAWN_AREA {
-            surrounding_chunks.push(ChunkMarker::new(chunk_x, chunk_z));
+    for chunk_x in chunk_pos.x - DRAWN_AREA..chunk_pos.x + DRAWN_AREA {
+        for chunk_z in chunk_pos.z - DRAWN_AREA..chunk_pos.z + DRAWN_AREA {
+            surrounding_chunks.push(ChunkIndex::new(chunk_x, chunk_z));
         }
     }
 
     surrounding_chunks
 }
 
-type ChunkIndex = i32;
 type ChunkData = [[f32; 3]; (CHUNK_SIZE * CHUNK_SIZE) as usize];
 #[derive(Default, Resource)]
 struct Map {
-    chunks: HashMap<ChunkIndex, HashMap<ChunkIndex, Chunk>>,
+    chunks: HashMap<ChunkIndex, Chunk>,
 }
 
 impl Map {
-    fn get_chunk(&self, x: &ChunkIndex, z: &ChunkIndex) -> Option<&Chunk> {
-        if self.chunks.contains_key(x) {
-            self.chunks.get(x)?.get(z)
-        } else {
-            None
-        }
+    fn get_chunk(&self, chunk_index: &ChunkIndex) -> Option<&Chunk> {
+        self.chunks.get(chunk_index)
     }
 
-    fn insert_chunk(&mut self, x: ChunkIndex, z: ChunkIndex, chunk: Chunk) {
-        if !self.chunks.contains_key(&x) {
-            self.chunks.insert(x, HashMap::new());
-        }
-
-        self.chunks.get_mut(&x).unwrap().insert(z, chunk);
+    fn insert_chunk(&mut self, index: ChunkIndex, chunk: Chunk) {
+        self.chunks.insert(index, chunk);
     }
 
-    fn chunk_is_present(&self, x: &ChunkIndex, y: &ChunkIndex) -> bool {
-        match self.chunks.get(x) {
-            Some(chunk_map) => chunk_map.contains_key(y),
-            None => false,
-        }
+    fn chunk_is_present(&self, x: &ChunkIndex) -> bool {
+        self.chunks.contains_key(x)
     }
 }
 
-#[derive(Component, Default, Debug, PartialEq)]
-struct ChunkMarker {
-    x: ChunkIndex,
-    z: ChunkIndex,
+type ChunkIndexType = i32;
+#[derive(Component, Default, Debug, PartialEq, Eq, Hash)]
+struct ChunkIndex {
+    x: ChunkIndexType,
+    z: ChunkIndexType,
 }
 
-impl ChunkMarker {
-    fn new(x: ChunkIndex, z: ChunkIndex) -> ChunkMarker {
-        ChunkMarker { x, z }
+impl ChunkIndex {
+    fn new(x: ChunkIndexType, z: ChunkIndexType) -> ChunkIndex {
+        ChunkIndex { x, z }
     }
 }
 struct Chunk {
     terrain: ChunkData,
 }
 
-fn get_chunk_pos(transform: &Transform) -> (ChunkIndex, ChunkIndex, ChunkIndex) {
-    (
-        (transform.translation.x / CHUNK_SIZE as f32).floor() as ChunkIndex,
-        (transform.translation.y / CHUNK_SIZE as f32).floor() as ChunkIndex,
-        (transform.translation.z / CHUNK_SIZE as f32).floor() as ChunkIndex,
+fn get_chunk_pos(transform: &Transform) -> ChunkIndex {
+    ChunkIndex::new(
+        (transform.translation.x / CHUNK_SIZE as f32).floor() as ChunkIndexType,
+        (transform.translation.z / CHUNK_SIZE as f32).floor() as ChunkIndexType,
     )
 }
 impl Chunk {
@@ -123,18 +111,18 @@ fn draw_area(
     player_pos_queue: Query<&Transform, With<PlayerMarker>>,
 ) {
     let player_pos = player_pos_queue.single().unwrap();
-    let (player_chunk_x, _, player_chunk_z) = get_chunk_pos(player_pos);
+    let player_chunk = get_chunk_pos(player_pos);
 
-    for chunk_x in player_chunk_x - DRAWN_AREA..player_chunk_x + DRAWN_AREA {
-        for chunk_z in player_chunk_z - DRAWN_AREA..player_chunk_z + DRAWN_AREA {
+    for chunk_x in player_chunk.x - DRAWN_AREA..player_chunk.x + DRAWN_AREA {
+        for chunk_z in player_chunk.z - DRAWN_AREA..player_chunk.z + DRAWN_AREA {
             if let Some(chunk) = map
-                .get_chunk(&chunk_x, &chunk_z)
+                .get_chunk(&ChunkIndex::new(chunk_x, chunk_z))
                 .and_then(|chunk| Some(chunk.to_mesh()))
             {
                 commands.spawn((
                     Mesh3d(meshes.add(chunk)),
                     MeshMaterial3d(materials.add(Color::srgb(0.1, 0.1, 0.1))),
-                    ChunkMarker::new(chunk_x, chunk_z),
+                    ChunkIndex::new(chunk_x, chunk_z),
                     Transform::from_xyz(
                         (chunk_x * CHUNK_SIZE as i32) as f32,
                         0.0,
@@ -149,7 +137,7 @@ fn draw_area(
 
 fn undraw_area(
     mut commands: Commands,
-    chunks: Query<(Entity, &ChunkMarker), With<ChunkMarker>>,
+    chunks: Query<(Entity, &ChunkIndex), With<ChunkIndex>>,
     player_pos_queue: Query<&Transform, With<PlayerMarker>>,
 ) {
     let surrounding_chunks = get_surrounding_chunks(player_pos_queue.iter().last().unwrap());
@@ -167,11 +155,11 @@ fn generate_chunks(
     player_pos_queue: Query<&Transform, With<PlayerMarker>>,
 ) {
     let player_pos = player_pos_queue.single().unwrap();
-    let (player_chunk_x, _, player_chunk_z) = get_chunk_pos(player_pos);
+    let player_chunk = get_chunk_pos(player_pos);
 
-    for chunk_x in player_chunk_x - DRAWN_AREA..player_chunk_x + DRAWN_AREA {
-        for chunk_z in player_chunk_z - DRAWN_AREA..player_chunk_z + DRAWN_AREA {
-            if !map.chunk_is_present(&chunk_x, &chunk_z) {
+    for chunk_x in player_chunk.x - DRAWN_AREA..player_chunk.x + DRAWN_AREA {
+        for chunk_z in player_chunk.z - DRAWN_AREA..player_chunk.z + DRAWN_AREA {
+            if !map.chunk_is_present(&ChunkIndex::new(chunk_x, chunk_z)) {
                 let seed = settings.seed;
                 let perlin = Perlin::new(seed);
                 let step = 1.0;
@@ -187,7 +175,10 @@ fn generate_chunks(
                     }
                 }
 
-                map.insert_chunk(chunk_x, chunk_z, Chunk::new(positions.try_into().unwrap()));
+                map.insert_chunk(
+                    ChunkIndex::new(chunk_x, chunk_z),
+                    Chunk::new(positions.try_into().unwrap()),
+                );
             }
         }
     }
