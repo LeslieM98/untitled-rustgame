@@ -5,8 +5,8 @@ use bevy::settings::*;
 use noise::{NoiseFn, Perlin};
 use std::collections::HashMap;
 
-const CHUNK_SIZE: u32 = 128;
-const DRAWN_AREA: i32 = 2;
+const CHUNK_SIZE: u32 = 101;
+const DRAWN_AREA: i32 = 3;
 
 pub struct MapPlugin;
 impl Plugin for MapPlugin {
@@ -128,9 +128,9 @@ fn draw_area(
                         Mesh3d(meshes.add(chunk)),
                         MeshMaterial3d(materials.add(Color::srgb(0.1, 0.1, 0.1))),
                         Transform::from_xyz(
-                            (curr_chunk.x * CHUNK_SIZE as i32) as f32,
+                            (curr_chunk.x * (CHUNK_SIZE - 1) as i32) as f32,
                             0.0,
-                            (curr_chunk.z * CHUNK_SIZE as i32) as f32,
+                            (curr_chunk.z * (CHUNK_SIZE - 1) as i32) as f32,
                         ),
                         // Wireframe,
                     ));
@@ -173,9 +173,13 @@ fn generate_chunks(
 
                 for z in 0..=CHUNK_SIZE - 1 {
                     let zf = z as f64 * step;
+                    let z_perlin =
+                        (z as f64 + chunk_z as f64 * (CHUNK_SIZE - 1) as f64) * step * 0.01;
                     for x in 0..=CHUNK_SIZE - 1 {
                         let xf = x as f64 * step;
-                        let perlin_result = perlin.get([xf * 0.01, zf * 0.01]) * 100.0;
+                        let x_perlin =
+                            (x as f64 + chunk_x as f64 * (CHUNK_SIZE - 1) as f64) * step * 0.01;
+                        let perlin_result = perlin.get([x_perlin, z_perlin]) * 50.0;
                         positions.push([xf as f32, perlin_result as f32, zf as f32]);
                     }
                 }
