@@ -38,20 +38,27 @@ struct Map {
 }
 
 impl Map {
-    fn get_chunk(&self, x: ChunkIndex, y: ChunkIndex) -> Option<&Chunk> {
-        self.chunks.get(&x).and_then(|map| map.get(&y))
+    fn get_chunk(&self, x: &ChunkIndex, z: &ChunkIndex) -> Option<&Chunk> {
+        if self.chunks.contains_key(x) {
+            self.chunks.get(x)?.get(z)
+        } else {
+            None
+        }
     }
 
-    fn insert_chunk(&mut self, x: ChunkIndex, y: ChunkIndex, chunk: Chunk) {
+    fn insert_chunk(&mut self, x: ChunkIndex, z: ChunkIndex, chunk: Chunk) {
         if !self.chunks.contains_key(&x) {
             self.chunks.insert(x, HashMap::new());
         }
 
-        self.chunks.get_mut(&x).unwrap().insert(y, chunk);
+        self.chunks.get_mut(&x).unwrap().insert(z, chunk);
     }
 
-    fn chunk_is_present(&self, x: ChunkIndex, y: ChunkIndex) -> bool {
-        self.get_chunk(x, y).is_some()
+    fn chunk_is_present(&self, x: &ChunkIndex, y: &ChunkIndex) -> bool {
+        match self.chunks.get(x) {
+            Some(chunk_map) => chunk_map.contains_key(y),
+            None => false,
+        }
     }
 }
 
@@ -61,6 +68,13 @@ struct Chunk {
     terrain: ChunkData,
 }
 
+fn get_chunk_pos(transform: &Transform) -> (ChunkIndex, ChunkIndex, ChunkIndex) {
+    (
+        (transform.translation.x / CHUNK_SIZE as f32).floor() as ChunkIndex,
+        (transform.translation.y / CHUNK_SIZE as f32).floor() as ChunkIndex,
+        (transform.translation.z / CHUNK_SIZE as f32).floor() as ChunkIndex,
+    )
+}
 impl Chunk {
     pub fn new(terrain: ChunkData) -> Self {
         Self { terrain }
@@ -87,13 +101,12 @@ fn draw_area(
     player_pos_queue: Query<&Transform, With<PlayerMarker>>,
 ) {
     let player_pos = player_pos_queue.single().unwrap();
-    let player_chunk_x = player_pos.translation.x.floor() as i32;
-    let player_chunk_z = player_pos.translation.z.floor() as i32;
+    let (player_chunk_x, _, player_chunk_z) = get_chunk_pos(player_pos);
 
     for chunk_x in player_chunk_x - DRAWN_AREA..player_chunk_x + DRAWN_AREA {
         for chunk_z in player_chunk_z - DRAWN_AREA..player_chunk_z + DRAWN_AREA {
             if let Some(chunk) = map
-                .get_chunk(chunk_x, chunk_z)
+                .get_chunk(&chunk_x, &chunk_z)
                 .and_then(|chunk| Some(chunk.to_mesh()))
             {
                 commands.spawn((
@@ -101,9 +114,9 @@ fn draw_area(
                     MeshMaterial3d(materials.add(Color::srgb(0.1, 0.1, 0.1))),
                     ChunkMarker {},
                     Transform::from_xyz(
-                        player_chunk_x as f32 * CHUNK_SIZE as f32,
+                        (chunk_x * CHUNK_SIZE as i32) as f32,
                         0.0,
-                        player_chunk_z as f32 * CHUNK_SIZE as f32,
+                        (chunk_z * CHUNK_SIZE as i32) as f32,
                     ),
                     // Wireframe,
                 ));
@@ -113,7 +126,6 @@ fn draw_area(
 }
 
 fn undraw_area(mut commands: Commands, chunks: Query<Entity, With<ChunkMarker>>) {
-    info!("{}", chunks.iter().count());
     for entity in chunks.iter() {
         commands.entity(entity).despawn();
     }
@@ -125,32 +137,27 @@ fn generate_chunks(
     player_pos_queue: Query<&Transform, With<PlayerMarker>>,
 ) {
     let player_pos = player_pos_queue.single().unwrap();
-    let player_chunk_x = player_pos.translation.x.floor() as i32;
-    let player_chunk_z = player_pos.translation.z.floor() as i32;
+    let (player_chunk_x, _, player_chunk_z) = get_chunk_pos(player_pos);
 
     for chunk_x in player_chunk_x - DRAWN_AREA..player_chunk_x + DRAWN_AREA {
         for chunk_z in player_chunk_z - DRAWN_AREA..player_chunk_z + DRAWN_AREA {
-            if !map.chunk_is_present(chunk_x, chunk_z) {
+            if !map.chunk_is_present(&chunk_x, &chunk_z) {
                 let seed = settings.seed;
                 let perlin = Perlin::new(seed);
                 let step = 1.0;
 
                 let mut positions = Vec::new();
 
-                for y in 0..=CHUNK_SIZE - 1 {
-                    let yf = y as f64 * step;
+                for z in 0..=CHUNK_SIZE - 1 {
+                    let zf = z as f64 * step;
                     for x in 0..=CHUNK_SIZE - 1 {
                         let xf = x as f64 * step;
-                        let perlin_result = perlin.get([xf * 0.01, yf * 0.01]) * 100.0;
-                        positions.push([xf as f32, perlin_result as f32, yf as f32]);
+                        let perlin_result = perlin.get([xf * 0.01, zf * 0.01]) * 100.0;
+                        positions.push([xf as f32, perlin_result as f32, zf as f32]);
                     }
                 }
 
-                map.insert_chunk(
-                    player_chunk_x,
-                    player_chunk_z,
-                    Chunk::new(positions.try_into().unwrap()),
-                );
+                map.insert_chunk(chunk_x, chunk_z, Chunk::new(positions.try_into().unwrap()));
             }
         }
     }
@@ -170,7 +177,6 @@ fn calculate_indices(chunk_size: u32) -> Vec<u32> {
             indices.extend_from_slice(&[top_right, bottom_left, bottom_right]);
         }
     }
-
     indices
 }
 
