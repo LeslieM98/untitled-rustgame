@@ -166,7 +166,9 @@ fn generate_chunks(
         for chunk_z in player_chunk.z - DRAWN_AREA..player_chunk.z + DRAWN_AREA {
             if !map.chunk_is_present(&ChunkIndex::new(chunk_x, chunk_z)) {
                 let seed = settings.seed;
+                let seed2 = settings.seed + 1;
                 let perlin = Perlin::new(seed);
+                let perlin2 = Perlin::new(seed2);
                 let step = 1.0;
 
                 let mut positions = Vec::new();
@@ -179,7 +181,8 @@ fn generate_chunks(
                         let xf = x as f64 * step;
                         let x_perlin =
                             (x as f64 + chunk_x as f64 * (CHUNK_SIZE - 1) as f64) * step * 0.01;
-                        let perlin_result = perlin.get([x_perlin, z_perlin]) * 50.0;
+                        let perlin_result = perlin.get([x_perlin, z_perlin]) * 50.0
+                            + perlin2.get([x_perlin + 10.0, z_perlin + 5.0]) * 50.0;
                         positions.push([xf as f32, perlin_result as f32, zf as f32]);
                     }
                 }
