@@ -1,4 +1,5 @@
 use bevy::app::{App, Plugin, Startup};
+use bevy::dev_tools::fps_overlay::FpsOverlayPlugin;
 use bevy::dev_tools::infinite_grid::{InfiniteGrid, InfiniteGridPlugin};
 use bevy::pbr::wireframe::WireframePlugin;
 use bevy::prelude::*;
@@ -15,6 +16,7 @@ impl Plugin for DebugPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(InfiniteGridPlugin)
             .add_plugins(WireframePlugin::default())
+            .add_plugins(FpsOverlayPlugin::default())
             .add_systems(Startup, debug_info);
     }
 }
